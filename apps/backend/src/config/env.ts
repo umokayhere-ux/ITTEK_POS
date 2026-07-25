@@ -33,6 +33,14 @@ const envSchema = z.object({
   CLOUDINARY_CLOUD_NAME: z.string().optional(),
   CLOUDINARY_API_KEY: z.string().optional(),
   CLOUDINARY_API_SECRET: z.string().optional(),
+  // Public base URL of the app (used in email links). Defaults to CORS origin.
+  APP_URL: z.string().optional(),
+  // SMTP (optional) — enables password-reset and transactional emails.
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().default('iTtEk POS <no-reply@ittek.pos>'),
 });
 
 const parsed = envSchema.safeParse(process.env);

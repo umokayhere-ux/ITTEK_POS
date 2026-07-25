@@ -157,6 +157,52 @@ export const authService = {
     return { user: toPublicUser(user), tenant: toPublicTenant(tenant), tokens };
   },
 
+  /**
+   * Starts a password reset: issues a one-time token, stores its hash with a
+   * 1-hour expiry, and emails the reset link. Always resolves the same way so
+   * the caller cannot probe which emails exist.
+   */
+  async forgotPassword(email: string): Promise<void> {
+    const crypto = await import('node:crypto');
+    const { User } = await import('../models/User.js');
+    const user = await User.findOne({ email, isDeleted: false }).exec();
+    if (!user || !user.isActive) return;
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    user.resetTokenHash = tokenHash;
+    user.resetTokenExpires = new Date(Date.now() + 60 * 60 * 1000);
+    await user.save();
+
+    const { appBaseUrl, sendMail } = await import('../config/mailer.js');
+    const link = `${appBaseUrl()}/reset-password?token=${token}`;
+    await sendMail(
+      user.email,
+      'Reset your iTtEk POS password',
+      `<p>Hello ${user.name},</p><p>Click the link below to reset your password. It expires in 1 hour.</p><p><a href="${link}">${link}</a></p><p>If you did not request this, you can ignore this email.</p>`,
+    );
+  },
+
+  /** Completes a password reset using a valid, unexpired token. */
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const crypto = await import('node:crypto');
+    const { User } = await import('../models/User.js');
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({
+      resetTokenHash: tokenHash,
+      resetTokenExpires: { $gt: new Date() },
+      isDeleted: false,
+    })
+      .select('+resetTokenHash +resetTokenExpires')
+      .exec();
+    if (!user) throw AppError.badRequest('Invalid or expired reset link');
+
+    user.passwordHash = await hashPassword(newPassword);
+    user.resetTokenHash = null;
+    user.resetTokenExpires = null;
+    await user.save();
+  },
+
   /** Exchanges a valid refresh token for a fresh access/refresh token pair. */
   async refresh(refreshToken: string): Promise<AuthTokens> {
     const payload = verifyRefreshToken(refreshToken);

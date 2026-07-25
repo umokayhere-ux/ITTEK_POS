@@ -25,6 +25,16 @@ export const authController = {
     sendSuccess(res, tokens, 'Token refreshed');
   },
 
+  async forgotPassword(req: Request, res: Response): Promise<void> {
+    await authService.forgotPassword(req.body.email);
+    sendSuccess(res, null, 'If an account exists, a reset link has been sent.');
+  },
+
+  async resetPassword(req: Request, res: Response): Promise<void> {
+    await authService.resetPassword(req.body.token, req.body.password);
+    sendSuccess(res, null, 'Password reset. You can now sign in.');
+  },
+
   async logout(_req: Request, res: Response): Promise<void> {
     // Stateless JWT logout is handled client-side by discarding tokens. A
     // refresh-token denylist (Redis) lands with the session-management module.

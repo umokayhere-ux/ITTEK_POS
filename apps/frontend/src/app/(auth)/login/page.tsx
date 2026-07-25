@@ -43,10 +43,15 @@ export default function LoginPage() {
             />
             <FieldError message={errors.password?.message} />
           </div>
-          <label className="flex items-center gap-2 text-sm text-muted-foreground">
-            <input type="checkbox" {...register('rememberMe')} className="h-4 w-4" />
-            Remember me
-          </label>
+          <div className="flex items-center justify-between text-sm">
+            <label className="flex items-center gap-2 text-muted-foreground">
+              <input type="checkbox" {...register('rememberMe')} className="h-4 w-4" />
+              Remember me
+            </label>
+            <Link href="/forgot-password" className="text-primary hover:underline">
+              Forgot password?
+            </Link>
+          </div>
 
           {login.isError && (
             <p className="text-sm text-destructive">{getApiErrorMessage(login.error)}</p>

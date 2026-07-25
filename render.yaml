@@ -37,3 +37,13 @@ services:
         sync: false
       - key: CLOUDINARY_API_SECRET
         sync: false
+      # Optional — set APP_URL to your Render URL and SMTP_* to enable
+      # password-reset emails.
+      - key: APP_URL
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false

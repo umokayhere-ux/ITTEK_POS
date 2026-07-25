@@ -13,6 +13,8 @@ export interface UserDocument extends Document<Types.ObjectId>, TenantScopedFiel
   isEmailVerified: boolean;
   isActive: boolean;
   lastLoginAt?: Date;
+  resetTokenHash?: string | null;
+  resetTokenExpires?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,6 +32,8 @@ const userSchema = new Schema<UserDocument>(
     isEmailVerified: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
     lastLoginAt: { type: Date },
+    resetTokenHash: { type: String, default: null, select: false },
+    resetTokenExpires: { type: Date, default: null, select: false },
   },
   { timestamps: true },
 );
