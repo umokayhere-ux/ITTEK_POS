@@ -95,6 +95,41 @@ export function usePlatformConfig() {
   return { query, update };
 }
 
+export interface AdminTicket {
+  _id: string;
+  subject: string;
+  status: string;
+  businessName: string;
+  messages: { author: 'tenant' | 'admin'; body: string; at: string }[];
+  updatedAt: string;
+}
+
+export function useTickets() {
+  return useQuery({
+    queryKey: ['platform', 'tickets'],
+    queryFn: async () => {
+      const { data } = await adminApi.get<ApiSuccess<AdminTicket[]>>('/platform/tickets');
+      return data.data;
+    },
+  });
+}
+
+export function useTicketActions() {
+  const qc = useQueryClient();
+  const invalidate = () => qc.invalidateQueries({ queryKey: ['platform', 'tickets'] });
+  return {
+    reply: useMutation({
+      mutationFn: ({ id, message }: { id: string; message: string }) =>
+        adminApi.post(`/platform/tickets/${id}/reply`, { message }),
+      onSuccess: invalidate,
+    }),
+    close: useMutation({
+      mutationFn: (id: string) => adminApi.post(`/platform/tickets/${id}/close`, {}),
+      onSuccess: invalidate,
+    }),
+  };
+}
+
 /** Approve / reject / suspend / reactivate a business. */
 export function useTenantAction() {
   const qc = useQueryClient();

@@ -21,6 +21,7 @@ import {
   BarChart3,
   CreditCard,
   Settings,
+  LifeBuoy,
   LogOut,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -47,6 +48,7 @@ const NAV: { href: string; label: string; icon: typeof LayoutDashboard; roles?: 
   { href: '/reports', label: 'Reports', icon: BarChart3, roles: ['branch_manager', 'accountant', 'auditor'] },
   { href: '/billing', label: 'Billing', icon: CreditCard, roles: ['branch_manager'] },
   { href: '/settings', label: 'Settings', icon: Settings, roles: ['branch_manager'] },
+  { href: '/support', label: 'Support', icon: LifeBuoy },
 ];
 
 interface SubscriptionInfo {

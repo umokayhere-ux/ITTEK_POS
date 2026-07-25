@@ -7,6 +7,8 @@ import {
   getPlatformSettings,
   invalidatePlatformSettingsCache,
 } from '../models/PlatformSettings.js';
+import { SupportTicket, TICKET_STATUS } from '../models/SupportTicket.js';
+import { Tenant } from '../models/Tenant.js';
 import { platformService } from '../services/platform.service.js';
 import { AppError } from '../utils/AppError.js';
 import { sendSuccess } from '../utils/apiResponse.js';
@@ -89,6 +91,44 @@ export const platformController = {
     adminId(req);
     const settings = await getPlatformSettings();
     sendSuccess(res, settings, 'Platform settings');
+  },
+
+  async listTickets(req: Request, res: Response): Promise<void> {
+    adminId(req);
+    const status = typeof req.query.status === 'string' ? req.query.status : undefined;
+    const filter = status ? { status } : {};
+    const tickets = await SupportTicket.find(filter).sort({ updatedAt: -1 }).limit(100).lean().exec();
+    const tenantIds = [...new Set(tickets.map((t) => String(t.tenantId)))];
+    const tenants = await Tenant.find({ _id: { $in: tenantIds } })
+      .select('businessName')
+      .lean()
+      .exec();
+    const nameById = new Map(tenants.map((t) => [String(t._id), t.businessName]));
+    const withNames = tickets.map((t) => ({ ...t, businessName: nameById.get(String(t.tenantId)) ?? '—' }));
+    sendSuccess(res, withNames, 'Support tickets');
+  },
+
+  async replyTicket(req: Request, res: Response): Promise<void> {
+    adminId(req);
+    const { message } = req.body as { message?: string };
+    if (!message) throw AppError.badRequest('Message is required');
+    const ticket = await SupportTicket.findById(req.params.id).exec();
+    if (!ticket) throw AppError.notFound('Ticket not found');
+    ticket.messages.push({ author: 'admin', body: message, at: new Date() });
+    ticket.status = TICKET_STATUS.ANSWERED;
+    await ticket.save();
+    sendSuccess(res, ticket, 'Reply sent');
+  },
+
+  async closeTicket(req: Request, res: Response): Promise<void> {
+    adminId(req);
+    const ticket = await SupportTicket.findByIdAndUpdate(
+      req.params.id,
+      { status: TICKET_STATUS.CLOSED },
+      { new: true },
+    ).exec();
+    if (!ticket) throw AppError.notFound('Ticket not found');
+    sendSuccess(res, ticket, 'Ticket closed');
   },
 
   async updateSettings(req: Request, res: Response): Promise<void> {

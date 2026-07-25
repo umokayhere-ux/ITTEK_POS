@@ -11,6 +11,7 @@ import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { usePlatformStats, usePlatformTenants, useTenantAction } from '@/hooks/use-admin';
 import { PlatformSection } from '@/components/admin/platform-section';
+import { TicketsSection } from '@/components/admin/tickets-section';
 import { adminStorage } from '@/lib/admin';
 import type { AdminTenant } from '@/lib/types';
 
@@ -184,6 +185,10 @@ export default function AdminDashboardPage() {
         <div className="pt-4">
           <h2 className="mb-4 text-lg font-semibold tracking-tight">Platform</h2>
           <PlatformSection />
+        </div>
+
+        <div className="pt-4">
+          <TicketsSection />
         </div>
       </main>
     </div>

@@ -15,6 +15,7 @@ import saleRoutes from './sale.routes.js';
 import settingsRoutes from './settings.routes.js';
 import staffRoutes from './staff.routes.js';
 import subscriptionRoutes from './subscription.routes.js';
+import supportRoutes from './support.routes.js';
 import uploadRoutes from './upload.routes.js';
 import { resourceRouters } from './resources.js';
 
@@ -52,6 +53,7 @@ router.use('/staff', staffRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/subscription', subscriptionRoutes);
 router.use('/billing', billingRoutes);
+router.use('/support', supportRoutes);
 router.use('/audit-logs', auditLogRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/uploads', uploadRoutes);

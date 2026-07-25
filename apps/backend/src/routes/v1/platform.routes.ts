@@ -27,4 +27,8 @@ router.delete('/announcements/:id', asyncHandler(platformController.deleteAnnoun
 router.get('/settings', asyncHandler(platformController.getSettings));
 router.patch('/settings', asyncHandler(platformController.updateSettings));
 
+router.get('/tickets', asyncHandler(platformController.listTickets));
+router.post('/tickets/:id/reply', asyncHandler(platformController.replyTicket));
+router.post('/tickets/:id/close', asyncHandler(platformController.closeTicket));
+
 export default router;
