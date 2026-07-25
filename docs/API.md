@@ -122,6 +122,27 @@ must never be supplied by the client.
 
 ---
 
+## Inventory
+
+Base path `/api/v1/inventory`. All routes require auth and are tenant-scoped.
+Stock is tracked per (product, branch); every change writes an immutable ledger
+entry with the resulting balance.
+
+| Method & path            | Description                                                        |
+| ------------------------ | ----------------------------------------------------------------- |
+| `GET /`                  | List stock levels. Filters: `?branchId`, `?productId`, pagination.|
+| `GET /logs`              | Movement ledger, newest first. Filters: `?branchId`, `?productId`.|
+| `GET /low-stock`         | Products at/below their reorder level (joined with product).      |
+| `POST /stock-in`         | Add stock. Body: `{ productId, branchId, quantity, reason?, reference? }`. |
+| `POST /stock-out`        | Remove stock. Fails `400` if insufficient on hand.                |
+| `POST /adjust`           | Set on-hand to an exact target. Body: `{ productId, branchId, targetQuantity, reason? }`. |
+| `POST /transfer`         | Move between branches. Body: `{ productId, fromBranchId, toBranchId, quantity, reason? }`. |
+
+Decrements use a conditional atomic update (`quantity >= amount`), so
+overselling is impossible even under concurrent requests.
+
+---
+
 ## Conventions for future endpoints
 
 - **Pagination:** `?page=1&limit=20`, returned in `meta`.

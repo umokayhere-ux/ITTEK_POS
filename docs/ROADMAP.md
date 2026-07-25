@@ -26,10 +26,18 @@ frontend pages → reusable UI components → error handling → tests → docum
 - [x] Soft-delete + audit fields enforced centrally; per-resource Zod validation
 - [x] Tests for the CRUD core and resource validators
 
-## ▶ Milestone 2 — Inventory
+## ✅ Milestone 2 — Inventory
 
-Stock in/out, transfers, adjustments, low/expiring stock, valuation, history
-(builds on Product + Branch).
+- [x] Per-branch stock levels with atomic `$inc` updates
+- [x] Immutable movement ledger (stock in/out, adjustment, transfer, sale, return)
+- [x] Conditional decrement prevents overselling without a transaction
+- [x] Stock-in / stock-out / adjust-to-target / branch-to-branch transfer
+- [x] Low-stock report (join with product reorder level), levels & logs listing
+
+## ▶ Milestone 2b — Sales / POS
+
+Cart checkout, sale + line items, payments, automatic stock decrement via the
+inventory ledger, receipts, returns/refunds, cash register.
 
 ## Milestone 3 — RBAC & staff management
 
