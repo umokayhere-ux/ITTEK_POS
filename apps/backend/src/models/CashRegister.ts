@@ -39,5 +39,7 @@ cashRegisterSchema.index(
   { tenantId: 1, branchId: 1 },
   { unique: true, partialFilterExpression: { status: 'open' } },
 );
+// General listing/history queries (the unique index above is partial).
+cashRegisterSchema.index({ tenantId: 1, createdAt: -1 });
 
 export const CashRegister = model<CashRegisterDocument>('CashRegister', cashRegisterSchema);

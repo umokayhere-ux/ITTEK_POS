@@ -14,11 +14,13 @@ export interface TenantScopedFields {
 }
 
 export const tenantScopedSchemaFields = {
+  // No standalone index here: every tenant-scoped model declares a compound
+  // index with `tenantId` as the prefix (which also serves tenantId-only
+  // lookups), so a separate single index would just duplicate it.
   tenantId: {
     type: Schema.Types.ObjectId,
     ref: 'Tenant',
     required: true,
-    index: true,
   },
   createdBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
   updatedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
