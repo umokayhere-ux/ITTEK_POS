@@ -1,6 +1,7 @@
 import type { AuditContext } from '../core/BaseRepository.js';
 import { toPublicUser, type PublicUser } from '../dtos/auth.dto.js';
 import { User } from '../models/User.js';
+import { auditLogRepository } from '../repositories/auditLog.repository.js';
 import { AppError } from '../utils/AppError.js';
 import { hashPassword } from '../utils/password.js';
 import type { CreateStaffInput, UpdateStaffInput } from '../validators/staff.validator.js';
@@ -21,6 +22,14 @@ export const staffService = {
       role: input.role,
       branchIds: input.branchIds ?? [],
       isActive: true,
+    });
+    await auditLogRepository.record({
+      tenantId: user.tenantId,
+      actorId: ctx.userId as unknown as typeof user._id,
+      action: 'staff.create',
+      entity: 'User',
+      entityId: user._id.toString(),
+      metadata: { role: input.role },
     });
     return toPublicUser(user);
   },

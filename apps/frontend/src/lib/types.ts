@@ -246,6 +246,7 @@ export interface StaffMember {
   email: string;
   role: string;
   isEmailVerified: boolean;
+  isActive: boolean;
 }
 
 export interface BusinessSettings {

@@ -5,6 +5,7 @@ import { Customer } from '../models/Customer.js';
 import { STOCK_MOVEMENT } from '../models/InventoryLog.js';
 import { Product, type ProductDocument } from '../models/Product.js';
 import { Sale, SALE_STATUS, type SaleDocument, type SaleItem } from '../models/Sale.js';
+import { auditLogRepository } from '../repositories/auditLog.repository.js';
 import { AppError } from '../utils/AppError.js';
 import { inventoryService } from './inventory.service.js';
 import type { CreateSaleInput } from '../validators/sale.validator.js';
@@ -149,6 +150,15 @@ export const saleService = {
         { $inc: { outstandingBalance: balanceDue } },
       ).exec();
     }
+
+    await auditLogRepository.record({
+      tenantId: sale.tenantId,
+      actorId: ctx.userId as unknown as SaleDocument['createdBy'],
+      action: 'sale.create',
+      entity: 'Sale',
+      entityId: sale._id.toString(),
+      metadata: { invoiceNumber, total: totals.total },
+    });
 
     return sale;
   },

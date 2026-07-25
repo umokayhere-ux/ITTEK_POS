@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import auditLogRoutes from './auditLog.routes.js';
 import authRoutes from './auth.routes.js';
 import cashRegisterRoutes from './cashRegister.routes.js';
 import inventoryRoutes from './inventory.routes.js';
@@ -41,6 +42,7 @@ router.use('/platform', platformRoutes);
 router.use('/staff', staffRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/subscription', subscriptionRoutes);
+router.use('/audit-logs', auditLogRoutes);
 router.use('/uploads', uploadRoutes);
 router.use('/inventory', inventoryRoutes);
 router.use('/sales', saleRoutes);

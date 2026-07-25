@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
@@ -59,6 +59,23 @@ export function StaffSection() {
     onSuccess: invalidate,
   });
 
+  const [editing, setEditing] = useState<StaffMember | null>(null);
+  const [editRole, setEditRole] = useState('cashier');
+  const [editActive, setEditActive] = useState(true);
+  const update = useMutation({
+    mutationFn: () => api.patch(`/staff/${editing?.id}`, { role: editRole, isActive: editActive }),
+    onSuccess: () => {
+      invalidate();
+      setEditing(null);
+    },
+  });
+
+  function openEdit(m: StaffMember) {
+    setEditing(m);
+    setEditRole(m.role);
+    setEditActive(m.isActive);
+  }
+
   const members = (list.data ?? []).filter((m) => m.role !== 'owner');
   const owner = (list.data ?? []).find((m) => m.role === 'owner');
 
@@ -106,19 +123,26 @@ export function StaffSection() {
                 <TD className="text-muted-foreground">{m.email}</TD>
                 <TD className="capitalize">{roleLabel(m.role)}</TD>
                 <TD>
-                  <Badge tone="default">Staff</Badge>
+                  <Badge tone={m.isActive ? 'success' : 'default'}>
+                    {m.isActive ? 'Active' : 'Inactive'}
+                  </Badge>
                 </TD>
                 <TD className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    aria-label="Remove"
-                    onClick={() => {
-                      if (confirm(`Remove ${m.name}?`)) remove.mutate(m.id);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex justify-end gap-1">
+                    <Button variant="ghost" size="sm" aria-label="Edit" onClick={() => openEdit(m)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Remove"
+                      onClick={() => {
+                        if (confirm(`Remove ${m.name}?`)) remove.mutate(m.id);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TD>
               </TR>
             ))}
@@ -165,6 +189,36 @@ export function StaffSection() {
               onClick={() => create.mutate()}
             >
               Create
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+
+      <Dialog open={!!editing} onClose={() => setEditing(null)} title={`Edit ${editing?.name ?? ''}`}>
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="editRole">Role</Label>
+            <Select id="editRole" value={editRole} onChange={(e) => setEditRole(e.target.value)}>
+              {ROLES.map((r) => (
+                <option key={r} value={r} className="capitalize">
+                  {roleLabel(r)}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={editActive} onChange={(e) => setEditActive(e.target.checked)} className="h-4 w-4" />
+            Active (can sign in)
+          </label>
+
+          {update.isError && <p className="text-sm text-destructive">{getApiErrorMessage(update.error)}</p>}
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setEditing(null)}>
+              Cancel
+            </Button>
+            <Button loading={update.isPending} onClick={() => update.mutate()}>
+              Save
             </Button>
           </div>
         </div>

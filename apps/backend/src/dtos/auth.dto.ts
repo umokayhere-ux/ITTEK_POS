@@ -13,6 +13,7 @@ export interface PublicUser {
   role: string;
   tenantId: string;
   isEmailVerified: boolean;
+  isActive: boolean;
 }
 
 export interface PublicTenant {
@@ -46,6 +47,7 @@ export function toPublicUser(user: UserDocument): PublicUser {
     role: String(user.role),
     tenantId: user.tenantId.toString(),
     isEmailVerified: user.isEmailVerified,
+    isActive: user.isActive,
   };
 }
 

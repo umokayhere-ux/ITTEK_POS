@@ -28,20 +28,22 @@ import { useSession } from '@/hooks/use-auth';
 import { authStorage } from '@/lib/auth-storage';
 import { cn } from '@/lib/utils';
 
-const NAV = [
+// `roles` restricts a menu item; omit to show it to everyone. The owner always
+// sees everything.
+const NAV: { href: string; label: string; icon: typeof LayoutDashboard; roles?: string[] }[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/pos', label: 'Point of Sale', icon: ShoppingCart },
   { href: '/sales', label: 'Sales', icon: ReceiptText },
   { href: '/products', label: 'Products', icon: Package },
-  { href: '/catalog', label: 'Catalog', icon: Tags },
-  { href: '/inventory', label: 'Inventory', icon: Boxes },
-  { href: '/purchases', label: 'Purchases', icon: PackagePlus },
+  { href: '/catalog', label: 'Catalog', icon: Tags, roles: ['branch_manager', 'store_manager', 'store_keeper'] },
+  { href: '/inventory', label: 'Inventory', icon: Boxes, roles: ['branch_manager', 'store_manager', 'store_keeper'] },
+  { href: '/purchases', label: 'Purchases', icon: PackagePlus, roles: ['branch_manager', 'store_manager', 'store_keeper', 'accountant'] },
   { href: '/customers', label: 'Customers', icon: Users },
-  { href: '/suppliers', label: 'Suppliers', icon: Truck },
-  { href: '/expenses', label: 'Expenses', icon: Receipt },
-  { href: '/cash-register', label: 'Cash Register', icon: Wallet },
-  { href: '/reports', label: 'Reports', icon: BarChart3 },
-  { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/suppliers', label: 'Suppliers', icon: Truck, roles: ['branch_manager', 'store_keeper', 'accountant'] },
+  { href: '/expenses', label: 'Expenses', icon: Receipt, roles: ['branch_manager', 'accountant'] },
+  { href: '/cash-register', label: 'Cash Register', icon: Wallet, roles: ['branch_manager', 'cashier'] },
+  { href: '/reports', label: 'Reports', icon: BarChart3, roles: ['branch_manager', 'accountant', 'auditor'] },
+  { href: '/settings', label: 'Settings', icon: Settings, roles: ['branch_manager'] },
 ];
 
 interface SubscriptionInfo {
@@ -107,7 +109,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           iTtEk<span className="text-primary">POS</span>
         </div>
         <nav className="flex flex-1 flex-col gap-1 overflow-y-auto">
-          {NAV.map(({ href, label, icon: Icon }) => {
+          {NAV.filter(
+            (item) => !item.roles || !user || user.role === 'owner' || item.roles.includes(user.role),
+          ).map(({ href, label, icon: Icon }) => {
             const active = pathname === href || pathname.startsWith(`${href}/`);
             return (
               <Link

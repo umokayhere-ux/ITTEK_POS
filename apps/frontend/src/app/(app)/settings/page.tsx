@@ -6,11 +6,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { BusinessSection } from '@/components/settings/business-section';
 import { BranchesSection } from '@/components/settings/branches-section';
 import { StaffSection } from '@/components/settings/staff-section';
+import { ActivitySection } from '@/components/settings/activity-section';
 
 const TABS = [
   { key: 'business', label: 'Business' },
   { key: 'branches', label: 'Branches' },
   { key: 'staff', label: 'Staff' },
+  { key: 'activity', label: 'Activity' },
 ] as const;
 
 export default function SettingsPage() {
@@ -41,6 +43,7 @@ export default function SettingsPage() {
           {tab === 'business' && <BusinessSection />}
           {tab === 'branches' && <BranchesSection />}
           {tab === 'staff' && <StaffSection />}
+          {tab === 'activity' && <ActivitySection />}
         </CardContent>
       </Card>
     </div>
