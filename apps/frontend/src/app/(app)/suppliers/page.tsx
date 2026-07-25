@@ -3,9 +3,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
+import { PaymentDialog } from '@/components/payment-dialog';
 import { FieldError } from '@/components/ui/field-error';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,6 +20,7 @@ export default function SuppliersPage() {
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<Supplier | null>(null);
   const [open, setOpen] = useState(false);
+  const [payFor, setPayFor] = useState<Supplier | null>(null);
 
   const list = suppliers.useList({ search: search || undefined, limit: 50 });
   const create = suppliers.useCreate();
@@ -97,6 +99,9 @@ export default function SuppliersPage() {
                 <TD className="text-right">{s.outstandingBalance.toFixed(2)}</TD>
                 <TD className="text-right">
                   <div className="flex justify-end gap-1">
+                    <Button variant="ghost" size="sm" aria-label="Record payment" onClick={() => setPayFor(s)}>
+                      <Wallet className="h-4 w-4" />
+                    </Button>
                     <Button variant="ghost" size="sm" aria-label="Edit" onClick={() => openEdit(s)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -117,6 +122,8 @@ export default function SuppliersPage() {
           </TBody>
         </Table>
       )}
+
+      <PaymentDialog open={!!payFor} onClose={() => setPayFor(null)} partyType="supplier" party={payFor} />
 
       <Dialog open={open} onClose={() => setOpen(false)} title={editing ? 'Edit supplier' : 'Add supplier'}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>

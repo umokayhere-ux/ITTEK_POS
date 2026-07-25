@@ -1,17 +1,18 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { Minus, Plus, Trash2, Search } from 'lucide-react';
+import { Minus, Plus, Trash2, Search, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Receipt } from '@/components/receipt';
 import { branches, products } from '@/hooks/resources';
 import { api, getApiErrorMessage } from '@/lib/api';
-import type { ApiSuccess, Product, Sale } from '@/lib/types';
+import type { ApiSuccess, BusinessSettings, Product, Sale } from '@/lib/types';
 
 interface CartLine {
   product: Product;
@@ -34,6 +35,13 @@ export default function PosPage() {
 
   const productList = products.useList({ search: search || undefined, limit: 20 });
   const branchList = branches.useList({ limit: 100 });
+  const business = useQuery({
+    queryKey: ['settings', 'business'],
+    queryFn: async () => {
+      const { data } = await api.get<ApiSuccess<BusinessSettings>>('/settings/business');
+      return data.data;
+    },
+  });
 
   const branchOptions = branchList.data?.items ?? [];
   const effectiveBranch = branchId || branchOptions[0]?._id || '';
@@ -90,7 +98,9 @@ export default function PosPage() {
   const canCheckout = cart.length > 0 && effectiveBranch && !checkout.isPending;
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <>
+      {receipt && <Receipt sale={receipt} business={business.data} />}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       {/* Product picker */}
       <div className="lg:col-span-2 space-y-4">
         <h1 className="text-2xl font-bold tracking-tight">Point of Sale</h1>
@@ -235,10 +245,14 @@ export default function PosPage() {
                 <span>Change due</span>
                 <span>{receipt.changeDue.toFixed(2)}</span>
               </div>
+              <Button variant="outline" size="sm" className="mt-3 w-full" onClick={() => window.print()}>
+                <Printer className="h-4 w-4" /> Print receipt
+              </Button>
             </div>
           )}
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </>
   );
 }

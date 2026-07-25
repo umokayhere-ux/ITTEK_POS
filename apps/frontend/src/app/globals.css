@@ -70,3 +70,26 @@
     background-size: 22px 22px;
   }
 }
+
+/* Print: show only the receipt, hide the rest of the app. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .receipt-print,
+  .receipt-print * {
+    visibility: visible;
+  }
+  .receipt-print {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    width: 80mm;
+    color: #000;
+    background: #fff;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+

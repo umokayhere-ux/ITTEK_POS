@@ -217,3 +217,49 @@ export interface ProfitLoss {
   netProfit: number;
   salesCount: number;
 }
+
+export interface Category {
+  _id: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+}
+
+export interface Brand {
+  _id: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+}
+
+export interface Unit {
+  _id: string;
+  name: string;
+  abbreviation: string;
+  isActive: boolean;
+}
+
+export interface StaffMember {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  isEmailVerified: boolean;
+}
+
+export interface BusinessSettings {
+  id: string;
+  businessName: string;
+  businessType: string;
+  email: string;
+  phone: string;
+  address: string;
+  country: string;
+  currency: string;
+  timezone: string;
+  logoUrl: string;
+  taxNumber: string;
+  receiptHeader: string;
+  receiptFooter: string;
+  status: string;
+}
