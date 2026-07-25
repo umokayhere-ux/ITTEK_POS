@@ -7,7 +7,9 @@ services:
     name: ittek-pos
     runtime: node
     plan: free
-    buildCommand: npm install && npm run build:unified
+    # --include=dev is required: Render sets NODE_ENV=production, which would
+    # otherwise skip the build tools (typescript, tailwind, etc.).
+    buildCommand: npm install --include=dev && npm run build:unified
     startCommand: npm start
     healthCheckPath: /health
     envVars:

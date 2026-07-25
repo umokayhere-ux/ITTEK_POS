@@ -70,7 +70,7 @@ Blueprint from this repo and set **`MONGODB_URI`** (e.g. a MongoDB Atlas
 connection string) and optionally `CORS_ORIGINS`. The JWT secrets are generated
 automatically. Render runs:
 
-- **Build:** `npm install && npm run build:unified`
+- **Build:** `npm install --include=dev && npm run build:unified`
 - **Start:** `npm start`
 - **Health check:** `/health`
 
