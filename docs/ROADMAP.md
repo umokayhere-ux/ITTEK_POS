@@ -18,13 +18,27 @@ frontend pages → reusable UI components → error handling → tests → docum
 - [x] Docker (per-app Dockerfiles + compose), CI (lint/typecheck/test/build)
 - [x] Unit tests (utils, jwt, password, validators) + docs
 
-## ▶ Milestone 1 — RBAC & staff management
+## ✅ Milestone 1 — Core commerce backend (catalog & partners)
+
+- [x] Generic tenant-scoped CRUD engine (`BaseRepository`, controller/router factories)
+- [x] Pagination, sorting, and search on all list endpoints
+- [x] Branch, Category, Brand, Unit, Product, Customer, Supplier models + endpoints
+- [x] Soft-delete + audit fields enforced centrally; per-resource Zod validation
+- [x] Tests for the CRUD core and resource validators
+
+## ▶ Milestone 2 — Inventory
+
+Stock in/out, transfers, adjustments, low/expiring stock, valuation, history
+(builds on Product + Branch).
+
+## Milestone 3 — RBAC & staff management
 
 Roles, granular permissions, staff CRUD, branch assignment, login history.
 
-## Milestone 2 — Catalog
+## Milestone 4 — Frontend for catalog & partners
 
-Categories, brands, units, products (SKU/barcode), Cloudinary images, import/export.
+Data tables, create/edit forms, and detail views for products, customers,
+suppliers, categories, brands, units, and branches (consuming the APIs above).
 
 ## Milestone 3 — Inventory
 

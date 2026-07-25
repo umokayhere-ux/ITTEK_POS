@@ -75,6 +75,53 @@ missing/invalid.
 
 ---
 
+## Tenant-scoped resources
+
+The following resources share a uniform, tenant-isolated CRUD surface. All
+routes require `Authorization: Bearer <accessToken>`; every query is
+automatically constrained to the caller's tenant and excludes soft-deleted rows.
+
+| Resource     | Base path                | Search fields            |
+| ------------ | ------------------------ | ------------------------ |
+| Branches     | `/api/v1/branches`       | name, code               |
+| Categories   | `/api/v1/categories`     | name                     |
+| Brands       | `/api/v1/brands`         | name                     |
+| Units        | `/api/v1/units`          | name, abbreviation       |
+| Products     | `/api/v1/products`       | name, sku, barcode       |
+| Customers    | `/api/v1/customers`      | name, phone, email       |
+| Suppliers    | `/api/v1/suppliers`      | name, phone, email       |
+
+Each exposes:
+
+| Method & path      | Description                                             |
+| ------------------ | ------------------------------------------------------- |
+| `POST /`           | Create. Body validated per resource; `201` on success.  |
+| `GET /`            | List. Supports `?page`, `?limit`, `?sortBy`, `?sortOrder=asc\|desc`, `?search`. Returns `meta`. |
+| `GET /:id`         | Fetch one. `404` if not found in tenant.                |
+| `PATCH /:id`       | Partial update (at least one field). `404` if not found.|
+| `DELETE /:id`      | Soft-delete (sets `isDeleted`/`deletedAt`). `404` if not found. |
+
+Example — create a product:
+
+```jsonc
+// POST /api/v1/products
+{
+  "name": "Milk 1L",
+  "sku": "MILK-1L",
+  "barcode": "6001234567890",
+  "categoryId": "665f0c2a1b2c3d4e5f6a7b8c",
+  "costPrice": 8.5,
+  "sellingPrice": 12,
+  "taxRate": 0,
+  "reorderLevel": 24
+}
+```
+
+`tenantId`, `createdBy`, and `updatedBy` are set server-side from the token and
+must never be supplied by the client.
+
+---
+
 ## Conventions for future endpoints
 
 - **Pagination:** `?page=1&limit=20`, returned in `meta`.
