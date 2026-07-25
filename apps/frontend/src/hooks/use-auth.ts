@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { authStorage } from '@/lib/auth-storage';
-import type { ApiSuccess, AuthResult, User } from '@/lib/types';
+import type { ApiSuccess, AuthResult, RegisterResult, User } from '@/lib/types';
 import type { LoginValues, RegisterValues } from '@/lib/validators';
 
 async function postAuth(path: string, payload: unknown): Promise<AuthResult> {
@@ -13,14 +13,16 @@ async function postAuth(path: string, payload: unknown): Promise<AuthResult> {
   return data.data;
 }
 
-/** Registration mutation: creates a tenant + owner and starts a session. */
+/**
+ * Registration mutation. Businesses start pending approval, so this does NOT
+ * start a session — the page shows the returned message and the owner signs in
+ * only after a super admin approves.
+ */
 export function useRegister() {
-  const router = useRouter();
   return useMutation({
-    mutationFn: (values: RegisterValues) => postAuth('/auth/register', values),
-    onSuccess: (result) => {
-      authStorage.setSession(result.tokens, result.user);
-      router.push('/dashboard');
+    mutationFn: async (values: RegisterValues): Promise<RegisterResult> => {
+      const { data } = await api.post<ApiSuccess<RegisterResult>>('/auth/register', values);
+      return data.data;
     },
   });
 }

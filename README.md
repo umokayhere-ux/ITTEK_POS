@@ -111,6 +111,29 @@ That's it — one service serves everything. (You can also deploy the root
 - **Tenant isolation** everywhere — `tenantId` always comes from the verified
   token, never the request body.
 
+## Super admin & business approval
+
+New business signups are created in a **pending** state and **cannot sign in
+until a super admin approves them**. The super admin operates the platform from
+a separate area at **`/admin`**.
+
+**Provision the first super admin** by setting these environment variables (on
+the backend / Render service) — an admin is created automatically on first boot
+if none with that email exists:
+
+```
+SUPERADMIN_EMAIL=you@example.com
+SUPERADMIN_PASSWORD=a-strong-password
+SUPERADMIN_NAME=Your Name
+```
+
+Then open **`/admin/login`**, sign in, and approve / reject / suspend businesses
+from the dashboard. The signup → approval → sign-in flow:
+
+1. Owner registers at `/register` → business is **pending**.
+2. Super admin approves it at `/admin`.
+3. Owner can now sign in at `/login`.
+
 ## Documentation
 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system design & conventions

@@ -23,3 +23,10 @@ services:
         generateValue: true
       - key: CORS_ORIGINS
         sync: false
+      # First super admin — created automatically on first boot if absent.
+      - key: SUPERADMIN_EMAIL
+        sync: false
+      - key: SUPERADMIN_PASSWORD
+        sync: false
+      - key: SUPERADMIN_NAME
+        value: Super Admin

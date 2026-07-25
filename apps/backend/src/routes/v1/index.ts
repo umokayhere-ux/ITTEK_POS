@@ -2,6 +2,7 @@ import { Router } from 'express';
 import authRoutes from './auth.routes.js';
 import cashRegisterRoutes from './cashRegister.routes.js';
 import inventoryRoutes from './inventory.routes.js';
+import platformRoutes from './platform.routes.js';
 import purchaseRoutes from './purchase.routes.js';
 import reportRoutes from './report.routes.js';
 import saleRoutes from './sale.routes.js';
@@ -16,6 +17,7 @@ router.get('/', (_req, res) => {
     version: '0.1.0',
     resources: [
       'auth',
+      'platform',
       'inventory',
       'sales',
       'purchases',
@@ -27,6 +29,7 @@ router.get('/', (_req, res) => {
 });
 
 router.use('/auth', authRoutes);
+router.use('/platform', platformRoutes);
 router.use('/inventory', inventoryRoutes);
 router.use('/sales', saleRoutes);
 router.use('/purchases', purchaseRoutes);

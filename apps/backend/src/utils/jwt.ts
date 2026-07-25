@@ -15,6 +15,12 @@ export interface RefreshTokenPayload {
   type: 'refresh';
 }
 
+export interface PlatformTokenPayload {
+  sub: string; // super admin id
+  role: 'super_admin';
+  type: 'platform';
+}
+
 export function signAccessToken(payload: Omit<AccessTokenPayload, 'type'>): string {
   return jwt.sign({ ...payload, type: 'access' }, env.JWT_ACCESS_SECRET, {
     expiresIn: env.JWT_ACCESS_TTL,
@@ -44,5 +50,21 @@ export function verifyRefreshToken(token: string): RefreshTokenPayload {
     return decoded;
   } catch {
     throw AppError.unauthorized('Invalid or expired refresh token');
+  }
+}
+
+export function signPlatformToken(payload: Omit<PlatformTokenPayload, 'type' | 'role'>): string {
+  return jwt.sign({ ...payload, role: 'super_admin', type: 'platform' }, env.JWT_ACCESS_SECRET, {
+    expiresIn: env.JWT_ACCESS_TTL,
+  } as SignOptions);
+}
+
+export function verifyPlatformToken(token: string): PlatformTokenPayload {
+  try {
+    const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET) as PlatformTokenPayload;
+    if (decoded.type !== 'platform') throw AppError.unauthorized('Invalid token type');
+    return decoded;
+  } catch {
+    throw AppError.unauthorized('Invalid or expired token');
   }
 }

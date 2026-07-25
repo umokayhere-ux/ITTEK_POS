@@ -1,5 +1,10 @@
 import { Schema, model, type Document, type Types } from 'mongoose';
-import { BUSINESS_TYPES, type BusinessType } from '../constants/index.js';
+import {
+  BUSINESS_TYPES,
+  TENANT_STATUS,
+  type BusinessType,
+  type TenantStatus,
+} from '../constants/index.js';
 
 /**
  * A Tenant is a single business account. It is the isolation boundary: every
@@ -16,6 +21,10 @@ export interface TenantDocument extends Document<Types.ObjectId> {
   timezone: string;
   address?: string;
   logoUrl?: string;
+  status: TenantStatus;
+  approvedAt?: Date;
+  approvedBy?: Types.ObjectId;
+  rejectionReason?: string;
   isActive: boolean;
   isSuspended: boolean;
   createdAt: Date;
@@ -34,6 +43,15 @@ const tenantSchema = new Schema<TenantDocument>(
     timezone: { type: String, required: true, trim: true },
     address: { type: String, trim: true },
     logoUrl: { type: String, trim: true },
+    status: {
+      type: String,
+      enum: Object.values(TENANT_STATUS),
+      default: TENANT_STATUS.PENDING,
+      index: true,
+    },
+    approvedAt: { type: Date },
+    approvedBy: { type: Schema.Types.ObjectId, ref: 'SuperAdmin' },
+    rejectionReason: { type: String, trim: true },
     isActive: { type: Boolean, default: true },
     isSuspended: { type: Boolean, default: false },
   },

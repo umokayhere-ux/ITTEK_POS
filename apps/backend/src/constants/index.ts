@@ -48,4 +48,14 @@ export const BUSINESS_TYPES = [
 
 export type BusinessType = (typeof BUSINESS_TYPES)[number];
 
+/** Approval lifecycle for a business (tenant). New signups start pending. */
+export const TENANT_STATUS = {
+  PENDING: 'pending',
+  ACTIVE: 'active',
+  SUSPENDED: 'suspended',
+  REJECTED: 'rejected',
+} as const;
+
+export type TenantStatus = (typeof TENANT_STATUS)[keyof typeof TENANT_STATUS];
+
 export const API_PREFIX = '/api/v1';

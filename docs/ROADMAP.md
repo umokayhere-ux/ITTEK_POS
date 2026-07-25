@@ -68,6 +68,20 @@ frontend pages → reusable UI components → error handling → tests → docum
 - [x] Root Dockerfile, `render.yaml` blueprint, single-container docker-compose
 - [x] Same-origin API (`/api/v1`); verified end-to-end (web + API + 404)
 
+## ✅ Milestone 6 — Super admin & approval workflow
+
+- [x] Platform SuperAdmin model + separate JWT auth and guard
+- [x] Business signups start **pending**; sign-in blocked until approved
+- [x] Super admin: approve / reject / suspend / reactivate businesses
+- [x] Platform stats + business listing with status filters and search
+- [x] First admin auto-provisioned from env (SUPERADMIN_EMAIL/PASSWORD)
+- [x] Admin web UI at `/admin` (login + dashboard)
+
+## ✅ Milestone 7 — UI refresh
+
+- [x] Modernized design tokens (refined palette, radius, dark mode)
+- [x] Reworked landing page (hero + feature grid), no emoji in the UI
+
 ## ▶ Next — remaining modules
 
 Debts & payments UI, purchases/expenses/cash-register frontend screens,

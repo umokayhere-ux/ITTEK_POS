@@ -27,12 +27,31 @@ export default function RegisterPage() {
     },
   });
 
+  // After a successful signup the business is pending approval — show a
+  // confirmation instead of the form.
+  if (registerBusiness.isSuccess) {
+    return (
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Registration received</CardTitle>
+          <CardDescription>Your business is pending approval.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">{registerBusiness.data?.message}</p>
+          <Link href="/login">
+            <Button className="w-full">Back to sign in</Button>
+          </Link>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="w-full max-w-2xl">
       <CardHeader>
         <CardTitle>Create your business</CardTitle>
         <CardDescription>
-          Start your 14-day free trial. Your workspace is provisioned instantly.
+          Register your business. An administrator will review and approve your account.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -117,7 +136,7 @@ export default function RegisterPage() {
 
           <div className="sm:col-span-2">
             <Button type="submit" className="w-full" loading={registerBusiness.isPending}>
-              Create business & start trial
+              Register business
             </Button>
           </div>
         </form>

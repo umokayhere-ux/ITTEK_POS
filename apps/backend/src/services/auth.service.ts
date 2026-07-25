@@ -2,6 +2,7 @@ import {
   PLANS,
   SUBSCRIPTION_STATUS,
   SYSTEM_ROLES,
+  TENANT_STATUS,
   TRIAL_PERIOD_DAYS,
 } from '../constants/index.js';
 import {
@@ -9,6 +10,7 @@ import {
   toPublicUser,
   type AuthResult,
   type AuthTokens,
+  type RegisterResult,
 } from '../dtos/auth.dto.js';
 import { auditLogRepository } from '../repositories/auditLog.repository.js';
 import { subscriptionRepository } from '../repositories/subscription.repository.js';
@@ -45,11 +47,11 @@ async function generateUniqueSlug(businessName: string): Promise<string> {
 
 export const authService = {
   /**
-   * Registers a new business: provisions the tenant, its owner account, a
-   * trial subscription and the initial audit entry. This is the entry point
-   * that bootstraps an isolated workspace.
+   * Registers a new business: provisions the tenant (in PENDING state), its
+   * owner account, a trial subscription and the initial audit entry. The owner
+   * cannot sign in until a super admin approves the business.
    */
-  async register(input: RegisterInput, meta: RequestMeta): Promise<AuthResult> {
+  async register(input: RegisterInput, meta: RequestMeta): Promise<RegisterResult> {
     const slug = await generateUniqueSlug(input.businessName);
 
     const tenant = await tenantRepository.create({
@@ -62,6 +64,7 @@ export const authService = {
       currency: input.currency,
       timezone: input.timezone,
       address: input.address,
+      status: TENANT_STATUS.PENDING,
     });
 
     try {
@@ -98,8 +101,12 @@ export const authService = {
         userAgent: meta.userAgent,
       });
 
-      const tokens = issueTokens(owner._id.toString(), tenant._id.toString(), String(owner.role));
-      return { user: toPublicUser(owner), tenant: toPublicTenant(tenant), tokens };
+      return {
+        status: TENANT_STATUS.PENDING,
+        message:
+          'Your business has been registered and is pending approval. You will be able to sign in once an administrator approves your account.',
+        tenant: toPublicTenant(tenant),
+      };
     } catch (err) {
       // Roll back the tenant if owner/subscription provisioning fails so we
       // never leave an orphaned, unusable workspace behind.
@@ -134,6 +141,17 @@ export const authService = {
     const { Tenant } = await import('../models/Tenant.js');
     const tenant = await Tenant.findById(user.tenantId).exec();
     if (!tenant) throw AppError.unauthorized('Tenant no longer exists');
+
+    // Gate sign-in on the business's approval status.
+    if (tenant.status === TENANT_STATUS.PENDING) {
+      throw AppError.forbidden('Your business is awaiting administrator approval');
+    }
+    if (tenant.status === TENANT_STATUS.SUSPENDED) {
+      throw AppError.forbidden('Your business has been suspended. Please contact support.');
+    }
+    if (tenant.status === TENANT_STATUS.REJECTED) {
+      throw AppError.forbidden('Your business registration was not approved.');
+    }
 
     const tokens = issueTokens(user._id.toString(), user.tenantId.toString(), String(user.role));
     return { user: toPublicUser(user), tenant: toPublicTenant(tenant), tokens };

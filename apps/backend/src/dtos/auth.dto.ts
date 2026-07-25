@@ -31,6 +31,12 @@ export interface AuthResult {
   tokens: AuthTokens;
 }
 
+export interface RegisterResult {
+  status: string;
+  message: string;
+  tenant: PublicTenant;
+}
+
 /** Strips sensitive/internal fields before returning a user to the client. */
 export function toPublicUser(user: UserDocument): PublicUser {
   return {

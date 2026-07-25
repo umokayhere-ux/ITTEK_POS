@@ -46,6 +46,41 @@ export interface AuthResult {
   tokens: AuthTokens;
 }
 
+export interface RegisterResult {
+  status: string;
+  message: string;
+  tenant: Pick<Tenant, 'id' | 'businessName' | 'slug'>;
+}
+
+export interface PlatformAdmin {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface AdminTenant {
+  _id: string;
+  businessName: string;
+  businessType: string;
+  email: string;
+  phone: string;
+  country: string;
+  status: 'pending' | 'active' | 'suspended' | 'rejected';
+  createdAt: string;
+  approvedAt?: string;
+  rejectionReason?: string;
+}
+
+export interface PlatformStats {
+  total: number;
+  pending: number;
+  active: number;
+  suspended: number;
+  rejected: number;
+  totalUsers: number;
+  totalSales: number;
+}
+
 // --- Domain entities (subset of backend models used by the UI) ---
 
 export interface Product {

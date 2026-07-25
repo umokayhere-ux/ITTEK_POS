@@ -16,6 +16,7 @@ declare global {
     interface Request {
       auth?: AuthContext;
       token?: AccessTokenPayload;
+      platformAdminId?: string;
     }
   }
 }

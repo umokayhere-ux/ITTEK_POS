@@ -24,6 +24,11 @@ const envSchema = z.object({
   // Optional path to the built frontend (static export). When present, the
   // backend serves the web app alongside the API as a single deployment.
   PUBLIC_DIR: z.string().optional(),
+  // Super admin bootstrap: if both are set and no admin with this email exists,
+  // one is created on startup. Use to seed the first platform administrator.
+  SUPERADMIN_EMAIL: z.string().email().optional(),
+  SUPERADMIN_PASSWORD: z.string().min(8).optional(),
+  SUPERADMIN_NAME: z.string().default('Super Admin'),
 });
 
 const parsed = envSchema.safeParse(process.env);
