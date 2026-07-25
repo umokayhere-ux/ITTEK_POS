@@ -22,7 +22,15 @@ export function TR({ className, ...props }: HTMLAttributes<HTMLTableRowElement>)
 }
 
 export function TH({ className, ...props }: ThHTMLAttributes<HTMLTableCellElement>) {
-  return <th className={cn('px-4 py-3 font-medium text-muted-foreground', className)} {...props} />;
+  return (
+    <th
+      className={cn(
+        'px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground',
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
 export function TD({ className, ...props }: TdHTMLAttributes<HTMLTableCellElement>) {

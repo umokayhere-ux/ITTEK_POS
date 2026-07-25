@@ -92,9 +92,15 @@ export const reportService = {
     const tid = new Types.ObjectId(tenantId);
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const weekAgo = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
     const saleBase = { tenantId: tid, isDeleted: false, status: { $ne: SALE_STATUS.REFUNDED } };
+    const sumSales = (from: Date, to?: Date) =>
+      Sale.aggregate([
+        { $match: { ...saleBase, createdAt: to ? { $gte: from, $lt: to } : { $gte: from } } },
+        { $group: { _id: null, sales: { $sum: '$total' }, orders: { $sum: 1 } } },
+      ]).exec();
 
     const [
       todayAgg,
@@ -108,6 +114,7 @@ export const reportService = {
       byDay,
       topProducts,
       activities,
+      yesterdayAgg,
     ] = await Promise.all([
       Sale.aggregate([
         { $match: { ...saleBase, createdAt: { $gte: todayStart } } },
@@ -150,15 +157,30 @@ export const reportService = {
       ]).exec(),
       this.topProducts(tenantId, {}, 5),
       AuditLog.find({ tenantId: tid }).sort({ createdAt: -1 }).limit(6).lean().exec(),
+      sumSales(yesterdayStart, todayStart),
     ]);
 
     const todaySales = todayAgg[0]?.sales ?? 0;
+    const todayOrders = todayAgg[0]?.orders ?? 0;
     const cogs = cogsAgg[0]?.cogs ?? 0;
+    const ySales = yesterdayAgg[0]?.sales ?? 0;
+    const yOrders = yesterdayAgg[0]?.orders ?? 0;
+
+    // Percent change vs. yesterday for the trend badges.
+    const pct = (t: number, y: number): { value: number; up: boolean } => {
+      if (y === 0) return { value: t > 0 ? 100 : 0, up: t >= 0 };
+      const v = ((t - y) / y) * 100;
+      return { value: Math.round(v * 10) / 10, up: v >= 0 };
+    };
 
     return {
       todaySales,
-      todayOrders: todayAgg[0]?.orders ?? 0,
+      todayOrders,
       grossProfitToday: Math.round((todaySales - cogs) * 100) / 100,
+      trends: {
+        sales: pct(todaySales, ySales),
+        orders: pct(todayOrders, yOrders),
+      },
       lowStockCount: lowStock.length,
       inventoryValue: Math.round((invAgg[0]?.value ?? 0) * 100) / 100,
       customers,
@@ -169,6 +191,50 @@ export const reportService = {
       topProducts,
       recentActivities: activities.map((a) => ({ action: a.action, entity: a.entity, at: a.createdAt })),
     };
+  },
+
+  /** Sales totals bucketed by day/week/month/year for the overview toggle. */
+  salesSeries(tenantId: string, period: string) {
+    const tid = new Types.ObjectId(tenantId);
+    const now = new Date();
+    let from: Date;
+    let format: string;
+    switch (period) {
+      case 'weekly':
+        from = new Date(now.getTime() - 12 * 7 * 24 * 60 * 60 * 1000);
+        format = '%Y-W%U';
+        break;
+      case 'monthly':
+        from = new Date(now.getFullYear() - 1, now.getMonth(), 1);
+        format = '%Y-%m';
+        break;
+      case 'yearly':
+        from = new Date(now.getFullYear() - 4, 0, 1);
+        format = '%Y';
+        break;
+      default:
+        from = new Date(now.getTime() - 13 * 24 * 60 * 60 * 1000);
+        format = '%Y-%m-%d';
+    }
+
+    return Sale.aggregate([
+      {
+        $match: {
+          tenantId: tid,
+          isDeleted: false,
+          status: { $ne: SALE_STATUS.REFUNDED },
+          createdAt: { $gte: from },
+        },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format, date: '$createdAt' } },
+          total: { $sum: '$total' },
+        },
+      },
+      { $sort: { _id: 1 } },
+      { $project: { _id: 0, date: '$_id', total: 1 } },
+    ]).exec();
   },
 
   /**

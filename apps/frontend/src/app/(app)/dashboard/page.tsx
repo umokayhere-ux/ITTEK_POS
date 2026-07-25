@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   ShoppingCart,
@@ -35,16 +36,43 @@ interface Dashboard {
   salesSeries: { date: string; total: number }[];
   topProducts: { productId: string; name: string; quantitySold: number; revenue: number }[];
   recentActivities: { action: string; entity?: string; at: string }[];
+  trends: {
+    sales: { value: number; up: boolean };
+    orders: { value: number; up: boolean };
+  };
+}
+
+const PERIODS = [
+  { key: 'daily', label: 'Daily' },
+  { key: 'weekly', label: 'Weekly' },
+  { key: 'monthly', label: 'Monthly' },
+  { key: 'yearly', label: 'Yearly' },
+];
+
+function trendBadge(t?: { value: number; up: boolean }) {
+  if (!t) return undefined;
+  return { value: `${t.up ? '+' : ''}${t.value}%`, up: t.up };
 }
 
 const money = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function DashboardPage() {
   const { user } = useSession();
+  const [period, setPeriod] = useState('daily');
   const q = useQuery({
     queryKey: ['dashboard'],
     queryFn: async () => {
       const { data } = await api.get<ApiSuccess<Dashboard>>('/reports/dashboard');
+      return data.data;
+    },
+  });
+  const series = useQuery({
+    queryKey: ['sales-series', period],
+    queryFn: async () => {
+      const { data } = await api.get<ApiSuccess<{ date: string; total: number }[]>>(
+        '/reports/sales-series',
+        { params: { period } },
+      );
       return data.data;
     },
   });
@@ -68,9 +96,9 @@ export default function DashboardPage() {
 
       {/* Primary KPIs */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <StatCard label="Total Sales (Today)" value={d ? money(d.todaySales) : '—'} icon={ShoppingCart} tone="blue" />
+        <StatCard label="Total Sales (Today)" value={d ? money(d.todaySales) : '—'} icon={ShoppingCart} tone="blue" trend={trendBadge(d?.trends.sales)} />
         <StatCard label="Gross Profit (Today)" value={d ? money(d.grossProfitToday) : '—'} icon={TrendingUp} tone="green" />
-        <StatCard label="Orders (Today)" value={d ? d.todayOrders : '—'} icon={ClipboardList} tone="purple" />
+        <StatCard label="Orders (Today)" value={d ? d.todayOrders : '—'} icon={ClipboardList} tone="purple" trend={trendBadge(d?.trends.orders)} />
         <StatCard label="Inventory Value" value={d ? money(d.inventoryValue) : '—'} icon={Wallet} tone="sky" />
         <Link href="/inventory">
           <StatCard label="Low Stock Items" value={d ? d.lowStockCount : '—'} icon={AlertTriangle} tone="red" />
@@ -81,15 +109,30 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Sales overview</CardTitle>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <CardTitle>Sales overview</CardTitle>
+              <div className="flex gap-1 rounded-md border border-border p-0.5">
+                {PERIODS.map((p) => (
+                  <button
+                    key={p.key}
+                    onClick={() => setPeriod(p.key)}
+                    className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                      period === p.key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            {q.isLoading ? (
-              <p className="text-sm text-muted-foreground">Loading…</p>
-            ) : (d?.salesSeries ?? []).length === 0 ? (
-              <p className="py-12 text-center text-sm text-muted-foreground">No sales in the last 7 days.</p>
+            {series.isLoading ? (
+              <p className="py-12 text-center text-sm text-muted-foreground">Loading…</p>
+            ) : (series.data ?? []).length === 0 ? (
+              <p className="py-12 text-center text-sm text-muted-foreground">No sales in this period.</p>
             ) : (
-              <SalesAreaChart data={d?.salesSeries ?? []} />
+              <SalesAreaChart data={series.data ?? []} />
             )}
           </CardContent>
         </Card>

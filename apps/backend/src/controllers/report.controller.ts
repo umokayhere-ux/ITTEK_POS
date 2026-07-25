@@ -36,4 +36,10 @@ export const reportController = {
     const data = await reportService.dashboard(ctxOf(req).tenantId);
     sendSuccess(res, data, 'Dashboard');
   },
+
+  async salesSeries(req: Request, res: Response): Promise<void> {
+    const period = typeof req.query.period === 'string' ? req.query.period : 'daily';
+    const data = await reportService.salesSeries(ctxOf(req).tenantId, period);
+    sendSuccess(res, data, 'Sales series');
+  },
 };

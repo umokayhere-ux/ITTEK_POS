@@ -7,6 +7,7 @@ const router = Router();
 router.use(authenticate);
 
 router.get('/dashboard', asyncHandler(reportController.dashboard));
+router.get('/sales-series', asyncHandler(reportController.salesSeries));
 router.get('/sales-summary', asyncHandler(reportController.salesSummary));
 router.get('/top-products', asyncHandler(reportController.topProducts));
 router.get('/profit-loss', asyncHandler(reportController.profitLoss));
