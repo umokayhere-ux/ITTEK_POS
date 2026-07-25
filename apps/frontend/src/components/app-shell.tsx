@@ -7,8 +7,13 @@ import {
   LayoutDashboard,
   ShoppingCart,
   Package,
+  Boxes,
+  PackagePlus,
   Users,
   Truck,
+  Receipt,
+  Wallet,
+  BarChart3,
   LogOut,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,8 +26,13 @@ const NAV = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/pos', label: 'Point of Sale', icon: ShoppingCart },
   { href: '/products', label: 'Products', icon: Package },
+  { href: '/inventory', label: 'Inventory', icon: Boxes },
+  { href: '/purchases', label: 'Purchases', icon: PackagePlus },
   { href: '/customers', label: 'Customers', icon: Users },
   { href: '/suppliers', label: 'Suppliers', icon: Truck },
+  { href: '/expenses', label: 'Expenses', icon: Receipt },
+  { href: '/cash-register', label: 'Cash Register', icon: Wallet },
+  { href: '/reports', label: 'Reports', icon: BarChart3 },
 ];
 
 /** Authenticated shell: sidebar navigation, top bar, and a client-side guard. */

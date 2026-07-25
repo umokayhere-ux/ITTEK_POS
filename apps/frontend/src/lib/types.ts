@@ -142,3 +142,75 @@ export interface Sale {
   items: SaleLine[];
   createdAt: string;
 }
+
+export interface Expense {
+  _id: string;
+  category: string;
+  amount: number;
+  description?: string;
+  date: string;
+  branchId?: string;
+}
+
+export interface StockLevel {
+  _id: string;
+  productId: string;
+  branchId: string;
+  quantity: number;
+}
+
+export interface LowStockItem {
+  productId: string;
+  name: string;
+  sku: string;
+  quantity: number;
+  reorderLevel: number;
+}
+
+export interface Purchase {
+  _id: string;
+  reference: string;
+  supplierId: string;
+  branchId: string;
+  total: number;
+  amountPaid: number;
+  balanceDue: number;
+  status: string;
+  createdAt: string;
+}
+
+export interface CashRegister {
+  _id: string;
+  branchId: string;
+  status: 'open' | 'closed';
+  openingBalance: number;
+  expectedCash: number;
+  countedCash?: number;
+  difference?: number;
+  openedAt: string;
+  closedAt?: string;
+}
+
+export interface SalesSummary {
+  totalSales: number;
+  count: number;
+  totalTax: number;
+  totalDiscount: number;
+  averageSale: number;
+  byDay: { date: string; total: number; count: number }[];
+}
+
+export interface TopProduct {
+  productId: string;
+  name: string;
+  sku: string;
+  quantitySold: number;
+  revenue: number;
+}
+
+export interface ProfitLoss {
+  revenue: number;
+  expenses: number;
+  netProfit: number;
+  salesCount: number;
+}
