@@ -1,5 +1,6 @@
 'use client';
 
+import { QRCodeSVG } from 'qrcode.react';
 import type { BusinessSettings, Sale } from '@/lib/types';
 
 /**
@@ -74,8 +75,11 @@ export function Receipt({ sale, business }: { sale: Sale; business?: BusinessSet
       )}
 
       <div className="my-2 border-t border-dashed border-black" />
-      <div className="text-center">
-        {business?.receiptFooter ?? 'Thank you for your business'}
+      <div className="flex flex-col items-center gap-1">
+        <QRCodeSVG value={sale.invoiceNumber} size={72} level="M" />
+        <div className="text-center">
+          {business?.receiptFooter ?? 'Thank you for your business'}
+        </div>
       </div>
     </div>
   );

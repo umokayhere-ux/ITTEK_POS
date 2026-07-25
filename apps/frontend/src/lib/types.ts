@@ -93,6 +93,7 @@ export interface Product {
   costPrice: number;
   taxRate: number;
   reorderLevel: number;
+  categoryId?: string;
   images?: string[];
   isActive: boolean;
 }

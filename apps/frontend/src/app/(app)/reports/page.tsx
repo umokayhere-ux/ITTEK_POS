@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toCsv, downloadCsv } from '@/lib/csv';
+import { SalesBarChart } from '@/components/charts/sales-bar-chart';
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table';
 import { api } from '@/lib/api';
 import type { ApiSuccess, ProfitLoss, SalesSummary, TopProduct } from '@/lib/types';
@@ -30,8 +31,6 @@ export default function ReportsPage() {
   const summary = useReport<SalesSummary>('/reports/sales-summary', params, 'summary');
   const top = useReport<TopProduct[]>('/reports/top-products', params, 'top');
   const pnl = useReport<ProfitLoss>('/reports/profit-loss', params, 'pnl');
-
-  const maxDay = Math.max(1, ...(summary.data?.byDay ?? []).map((d) => d.total));
 
   const cards = [
     { label: 'Total sales', value: summary.data?.totalSales ?? 0 },
@@ -95,22 +94,9 @@ export default function ReportsPage() {
           </CardHeader>
           <CardContent>
             {(summary.data?.byDay ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">No sales in this range.</p>
+              <p className="py-12 text-center text-sm text-muted-foreground">No sales in this range.</p>
             ) : (
-              <div className="space-y-2">
-                {(summary.data?.byDay ?? []).map((d) => (
-                  <div key={d.date} className="flex items-center gap-3 text-sm">
-                    <span className="w-24 shrink-0 text-muted-foreground">{d.date}</span>
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full bg-primary"
-                        style={{ width: `${(d.total / maxDay) * 100}%` }}
-                      />
-                    </div>
-                    <span className="w-16 shrink-0 text-right">{d.total.toFixed(2)}</span>
-                  </div>
-                ))}
-              </div>
+              <SalesBarChart data={summary.data?.byDay ?? []} />
             )}
           </CardContent>
         </Card>

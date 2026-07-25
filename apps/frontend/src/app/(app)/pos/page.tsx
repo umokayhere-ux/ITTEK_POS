@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Receipt } from '@/components/receipt';
-import { branches, products } from '@/hooks/resources';
+import { branches, categories, products } from '@/hooks/resources';
 import { api, getApiErrorMessage } from '@/lib/api';
 import type { ApiSuccess, BusinessSettings, Product, Sale } from '@/lib/types';
 
@@ -38,8 +38,14 @@ export default function PosPage() {
   const [held, setHeld] = useState<CartLine[][]>([]);
   const [receipt, setReceipt] = useState<Sale | null>(null);
 
-  const productList = products.useList({ search: search || undefined, limit: 20 });
+  const [categoryId, setCategoryId] = useState('');
+  const productList = products.useList({ search: search || undefined, limit: 100 });
+  const categoryList = categories.useList({ limit: 100 });
   const branchList = branches.useList({ limit: 100 });
+
+  const visibleProducts = (productList.data?.items ?? []).filter(
+    (p) => !categoryId || p.categoryId === categoryId,
+  );
   const business = useQuery({
     queryKey: ['settings', 'business'],
     queryFn: async () => {
@@ -189,8 +195,29 @@ export default function PosPage() {
         </div>
         {scanError && <p className="text-sm text-destructive">{scanError}</p>}
 
+        {/* Category rail */}
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant={categoryId === '' ? 'primary' : 'outline'}
+            onClick={() => setCategoryId('')}
+          >
+            All
+          </Button>
+          {(categoryList.data?.items ?? []).map((c) => (
+            <Button
+              key={c._id}
+              size="sm"
+              variant={categoryId === c._id ? 'primary' : 'outline'}
+              onClick={() => setCategoryId(c._id)}
+            >
+              {c.name}
+            </Button>
+          ))}
+        </div>
+
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {(productList.data?.items ?? []).map((p) => (
+          {visibleProducts.map((p) => (
             <button
               key={p._id}
               onClick={() => addToCart(p)}
@@ -212,7 +239,7 @@ export default function PosPage() {
               </div>
             </button>
           ))}
-          {productList.data?.items.length === 0 && (
+          {visibleProducts.length === 0 && (
             <p className="text-sm text-muted-foreground">No products found.</p>
           )}
         </div>
