@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { NotificationBell } from '@/components/notification-bell';
 import { useSession } from '@/hooks/use-auth';
 import { authStorage } from '@/lib/auth-storage';
 import { cn } from '@/lib/utils';
@@ -135,6 +136,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="text-sm text-muted-foreground md:hidden">iTtEk POS</div>
           <div className="ml-auto flex items-center gap-3">
             {user && <span className="hidden text-sm text-muted-foreground sm:inline">{user.name}</span>}
+            <NotificationBell />
             <ThemeToggle />
             <Button variant="outline" size="sm" onClick={logout}>
               <LogOut className="h-4 w-4" />

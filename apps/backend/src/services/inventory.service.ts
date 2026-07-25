@@ -5,7 +5,9 @@ import {
   STOCK_MOVEMENT,
   type StockMovementType,
 } from '../models/InventoryLog.js';
+import { Product } from '../models/Product.js';
 import { StockLevel, type StockLevelDocument } from '../models/StockLevel.js';
+import { notificationService } from './notification.service.js';
 import { AppError } from '../utils/AppError.js';
 
 interface MovementInput {
@@ -57,6 +59,22 @@ async function applyMovement(ctx: AuditContext, input: MovementInput): Promise<S
     createdBy: ctx.userId,
     updatedBy: ctx.userId,
   });
+
+  // Raise a low-stock notification when a decrement crosses the reorder level.
+  if (change < 0) {
+    const product = await Product.findOne({ _id: productId, tenantId: ctx.tenantId }).exec();
+    const prev = level.quantity - change;
+    if (product && level.quantity <= product.reorderLevel && prev > product.reorderLevel) {
+      await notificationService.notify({
+        tenantId: ctx.tenantId,
+        type: 'low_stock',
+        title: 'Low stock',
+        message: `${product.name} (${product.sku}) is low: ${level.quantity} left.`,
+        link: '/inventory',
+        dedupeKey: `lowstock:${productId}:${branchId}`,
+      });
+    }
+  }
 
   return level;
 }
