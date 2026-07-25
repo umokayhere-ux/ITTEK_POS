@@ -45,3 +45,65 @@ export interface AuthResult {
   tenant: Tenant;
   tokens: AuthTokens;
 }
+
+// --- Domain entities (subset of backend models used by the UI) ---
+
+export interface Product {
+  _id: string;
+  name: string;
+  sku: string;
+  barcode?: string;
+  sellingPrice: number;
+  costPrice: number;
+  taxRate: number;
+  reorderLevel: number;
+  isActive: boolean;
+}
+
+export interface Customer {
+  _id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  creditLimit: number;
+  outstandingBalance: number;
+  isActive: boolean;
+}
+
+export interface Supplier {
+  _id: string;
+  name: string;
+  contactPerson?: string;
+  email?: string;
+  phone?: string;
+  outstandingBalance: number;
+  isActive: boolean;
+}
+
+export interface Branch {
+  _id: string;
+  name: string;
+  code: string;
+  isActive: boolean;
+}
+
+export interface SaleLine {
+  productId: string;
+  name: string;
+  sku: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
+export interface Sale {
+  _id: string;
+  invoiceNumber: string;
+  total: number;
+  amountPaid: number;
+  changeDue: number;
+  balanceDue: number;
+  status: string;
+  items: SaleLine[];
+  createdAt: string;
+}

@@ -48,3 +48,34 @@ export const loginSchema = z.object({
 
 export type RegisterValues = z.infer<typeof registerSchema>;
 export type LoginValues = z.infer<typeof loginSchema>;
+
+// --- Resource forms ---
+
+const money = z.coerce.number().min(0, 'Must be 0 or more');
+
+export const productFormSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(200),
+  sku: z.string().min(1, 'SKU is required').max(60),
+  barcode: z.string().max(60).optional().or(z.literal('')),
+  costPrice: money.default(0),
+  sellingPrice: money.default(0),
+  taxRate: z.coerce.number().min(0).max(100).default(0),
+  reorderLevel: z.coerce.number().min(0).default(0),
+});
+export type ProductFormValues = z.infer<typeof productFormSchema>;
+
+export const customerFormSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(160),
+  phone: z.string().max(30).optional().or(z.literal('')),
+  email: z.string().email('Invalid email').optional().or(z.literal('')),
+  creditLimit: money.default(0),
+});
+export type CustomerFormValues = z.infer<typeof customerFormSchema>;
+
+export const supplierFormSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(160),
+  contactPerson: z.string().max(120).optional().or(z.literal('')),
+  phone: z.string().max(30).optional().or(z.literal('')),
+  email: z.string().email('Invalid email').optional().or(z.literal('')),
+});
+export type SupplierFormValues = z.infer<typeof supplierFormSchema>;

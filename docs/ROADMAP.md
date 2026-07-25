@@ -45,10 +45,19 @@ frontend pages → reusable UI components → error handling → tests → docum
 - [x] Full refund: restores stock and clears customer credit
 - [x] Endpoints: create / list / detail / refund
 
-## ▶ Next — Cash register, purchases, expenses, reports, then frontend screens
+## ✅ Milestone 3 — Frontend for core operations
+
+- [x] Authenticated app shell with sidebar navigation and client-side guard
+- [x] Generic resource data layer (TanStack Query hooks over a typed REST client)
+- [x] Products, Customers, Suppliers management (search, table, create/edit/delete)
+- [x] POS checkout page: product search, cart, live totals, payment, receipt
+- [x] Dashboard wired to real data (counts, recent sales, low stock)
+- [x] Reusable UI: table, modal dialog, badge
+
+## ▶ Next — Cash register, purchases, expenses, reports
 
 Cash register open/close & movements; purchase orders & receiving; expenses &
-debts; sales/inventory/P&L reports; then the frontend UIs for all modules.
+debts; sales/inventory/P&L report endpoints and screens.
 
 ## Milestone 3 — RBAC & staff management
 
