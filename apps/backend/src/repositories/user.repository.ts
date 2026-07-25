@@ -18,7 +18,9 @@ export const userRepository = {
 
   /** Finds the first tenant an email belongs to (used to resolve login tenant). */
   findByEmailAnyTenantWithSecret(email: string): Promise<UserDocument | null> {
-    return User.findOne({ email, isDeleted: false }).select('+passwordHash').exec();
+    return User.findOne({ email, isDeleted: false })
+      .select('+passwordHash +twoFactorSecret')
+      .exec();
   },
 
   findById(

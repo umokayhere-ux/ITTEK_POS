@@ -26,6 +26,7 @@ export const loginSchema = z.object({
   email: z.string().email().toLowerCase(),
   password: z.string().min(1, 'Password is required'),
   rememberMe: z.boolean().optional().default(false),
+  twoFactorToken: z.string().optional(),
 });
 
 export const refreshSchema = z.object({

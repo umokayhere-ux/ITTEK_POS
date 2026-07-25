@@ -1,7 +1,9 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { AxiosError } from 'axios';
 import Link from 'next/link';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,11 +16,21 @@ import { loginSchema, type LoginValues } from '@/lib/validators';
 
 export default function LoginPage() {
   const login = useLogin();
+  const [needs2fa, setNeeds2fa] = useState(false);
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginValues>({ resolver: zodResolver(loginSchema) });
+
+  function onSubmit(values: LoginValues) {
+    login.mutate(values, {
+      onError: (err) => {
+        const data = err instanceof AxiosError ? err.response?.data : undefined;
+        if (data?.errors?.twoFactorRequired) setNeeds2fa(true);
+      },
+    });
+  }
 
   return (
     <Card className="w-full max-w-md">
@@ -27,7 +39,7 @@ export default function LoginPage() {
         <CardDescription>Log in to your iTtEk POS workspace.</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit((values) => login.mutate(values))} className="space-y-4" noValidate>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
           <div>
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" autoComplete="email" {...register('email')} />
@@ -53,12 +65,25 @@ export default function LoginPage() {
             </Link>
           </div>
 
+          {needs2fa && (
+            <div>
+              <Label htmlFor="twoFactorToken">Two-factor code</Label>
+              <Input
+                id="twoFactorToken"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                placeholder="6-digit code"
+                {...register('twoFactorToken')}
+              />
+            </div>
+          )}
+
           {login.isError && (
             <p className="text-sm text-destructive">{getApiErrorMessage(login.error)}</p>
           )}
 
           <Button type="submit" className="w-full" loading={login.isPending}>
-            Log in
+            {needs2fa ? 'Verify & sign in' : 'Log in'}
           </Button>
         </form>
 

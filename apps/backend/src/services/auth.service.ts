@@ -129,6 +129,17 @@ export const authService = {
       throw AppError.unauthorized('Invalid email or password');
     }
 
+    // Second factor, when enabled for this user.
+    if (user.twoFactorEnabled) {
+      const { twoFactorService } = await import('./twoFactor.service.js');
+      if (!input.twoFactorToken) {
+        throw new AppError(401, 'Two-factor code required', { twoFactorRequired: true });
+      }
+      if (!user.twoFactorSecret || !twoFactorService.verifyToken(user.twoFactorSecret, input.twoFactorToken)) {
+        throw new AppError(401, 'Invalid two-factor code', { twoFactorRequired: true });
+      }
+    }
+
     await userRepository.touchLastLogin(user._id);
     await auditLogRepository.record({
       tenantId: user.tenantId,

@@ -31,5 +31,8 @@ router.post(
 );
 router.post('/logout', asyncHandler(authController.logout));
 router.get('/me', authenticate, asyncHandler(authController.me));
+router.post('/2fa/setup', authenticate, asyncHandler(authController.setup2fa));
+router.post('/2fa/enable', authenticate, asyncHandler(authController.enable2fa));
+router.post('/2fa/disable', authenticate, asyncHandler(authController.disable2fa));
 
 export default router;

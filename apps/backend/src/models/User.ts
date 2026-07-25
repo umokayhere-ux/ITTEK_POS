@@ -15,6 +15,8 @@ export interface UserDocument extends Document<Types.ObjectId>, TenantScopedFiel
   lastLoginAt?: Date;
   resetTokenHash?: string | null;
   resetTokenExpires?: Date | null;
+  twoFactorSecret?: string | null;
+  twoFactorEnabled: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -34,6 +36,8 @@ const userSchema = new Schema<UserDocument>(
     lastLoginAt: { type: Date },
     resetTokenHash: { type: String, default: null, select: false },
     resetTokenExpires: { type: Date, default: null, select: false },
+    twoFactorSecret: { type: String, default: null, select: false },
+    twoFactorEnabled: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

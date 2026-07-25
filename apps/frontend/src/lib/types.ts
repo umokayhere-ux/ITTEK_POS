@@ -28,6 +28,7 @@ export interface User {
   role: string;
   tenantId: string;
   isEmailVerified: boolean;
+  twoFactorEnabled?: boolean;
 }
 
 export interface Tenant {

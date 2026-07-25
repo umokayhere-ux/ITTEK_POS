@@ -14,6 +14,7 @@ export interface PublicUser {
   tenantId: string;
   isEmailVerified: boolean;
   isActive: boolean;
+  twoFactorEnabled: boolean;
 }
 
 export interface PublicTenant {
@@ -48,6 +49,7 @@ export function toPublicUser(user: UserDocument): PublicUser {
     tenantId: user.tenantId.toString(),
     isEmailVerified: user.isEmailVerified,
     isActive: user.isActive,
+    twoFactorEnabled: user.twoFactorEnabled,
   };
 }
 

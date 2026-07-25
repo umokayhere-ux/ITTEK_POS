@@ -47,4 +47,25 @@ export const authController = {
     if (!user) throw AppError.notFound('User not found');
     sendSuccess(res, toPublicUser(user), 'Current user');
   },
+
+  async setup2fa(req: Request, res: Response): Promise<void> {
+    if (!req.auth) throw AppError.unauthorized();
+    const { twoFactorService } = await import('../services/twoFactor.service.js');
+    const result = await twoFactorService.setup(req.auth.tenantId, req.auth.userId);
+    sendSuccess(res, result, 'Scan this in your authenticator app, then enter a code to enable.');
+  },
+
+  async enable2fa(req: Request, res: Response): Promise<void> {
+    if (!req.auth) throw AppError.unauthorized();
+    const { twoFactorService } = await import('../services/twoFactor.service.js');
+    await twoFactorService.enable(req.auth.tenantId, req.auth.userId, req.body.token);
+    sendSuccess(res, null, 'Two-factor authentication enabled');
+  },
+
+  async disable2fa(req: Request, res: Response): Promise<void> {
+    if (!req.auth) throw AppError.unauthorized();
+    const { twoFactorService } = await import('../services/twoFactor.service.js');
+    await twoFactorService.disable(req.auth.tenantId, req.auth.userId, req.body.token);
+    sendSuccess(res, null, 'Two-factor authentication disabled');
+  },
 };
