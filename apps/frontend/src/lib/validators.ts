@@ -79,3 +79,12 @@ export const supplierFormSchema = z.object({
   email: z.string().email('Invalid email').optional().or(z.literal('')),
 });
 export type SupplierFormValues = z.infer<typeof supplierFormSchema>;
+
+export const branchFormSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(120),
+  code: z.string().min(1, 'Code is required').max(20),
+  address: z.string().max(300).optional().or(z.literal('')),
+  phone: z.string().max(30).optional().or(z.literal('')),
+  email: z.string().email('Invalid email').optional().or(z.literal('')),
+});
+export type BranchFormValues = z.infer<typeof branchFormSchema>;

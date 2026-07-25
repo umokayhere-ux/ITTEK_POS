@@ -14,6 +14,7 @@ import {
   Receipt,
   Wallet,
   BarChart3,
+  Settings,
   LogOut,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,7 @@ const NAV = [
   { href: '/expenses', label: 'Expenses', icon: Receipt },
   { href: '/cash-register', label: 'Cash Register', icon: Wallet },
   { href: '/reports', label: 'Reports', icon: BarChart3 },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 /** Authenticated shell: sidebar navigation, top bar, and a client-side guard. */
@@ -56,11 +58,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen">
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-border p-4 md:flex">
+      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-border p-4 md:flex">
         <div className="mb-6 px-2 text-lg font-bold tracking-tight">
           iTtEk<span className="text-primary">POS</span>
         </div>
-        <nav className="flex flex-1 flex-col gap-1">
+        <nav className="flex flex-1 flex-col gap-1 overflow-y-auto">
           {NAV.map(({ href, label, icon: Icon }) => {
             const active = pathname === href || pathname.startsWith(`${href}/`);
             return (
