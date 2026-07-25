@@ -194,11 +194,22 @@ export default function PosPage() {
             <button
               key={p._id}
               onClick={() => addToCart(p)}
-              className="rounded-lg border border-border p-3 text-left transition-colors hover:bg-muted"
+              className="overflow-hidden rounded-lg border border-border text-left transition-shadow hover:shadow-sm"
             >
-              <div className="line-clamp-2 text-sm font-medium">{p.name}</div>
-              <div className="mt-1 text-xs text-muted-foreground">{p.sku}</div>
-              <div className="mt-2 font-semibold">{p.sellingPrice.toFixed(2)}</div>
+              <div className="flex h-24 items-center justify-center bg-muted">
+                {p.images?.[0] ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={p.images[0]} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="text-2xl font-bold text-muted-foreground/40">
+                    {p.name.charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div className="p-3">
+                <div className="line-clamp-2 text-sm font-medium">{p.name}</div>
+                <div className="mt-1 font-semibold text-primary">{p.sellingPrice.toFixed(2)}</div>
+              </div>
             </button>
           ))}
           {productList.data?.items.length === 0 && (

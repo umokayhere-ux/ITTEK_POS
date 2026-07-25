@@ -2,120 +2,115 @@
 
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import {
+  ShoppingCart,
+  Wallet,
+  TrendingUp,
+  ClipboardList,
+  AlertTriangle,
+  Boxes,
+  Users,
+  Truck,
+  Receipt,
+  HandCoins,
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { StatCard } from '@/components/ui/stat-card';
 import { Button } from '@/components/ui/button';
-import { customers, products } from '@/hooks/resources';
+import { SalesAreaChart } from '@/components/charts/sales-area-chart';
 import { api } from '@/lib/api';
-import type { ApiSuccess, Sale } from '@/lib/types';
+import { useSession } from '@/hooks/use-auth';
+import type { ApiSuccess } from '@/lib/types';
 
-interface LowStockItem {
-  productId: string;
-  name: string;
-  sku: string;
-  quantity: number;
-  reorderLevel: number;
+interface Dashboard {
+  todaySales: number;
+  todayOrders: number;
+  grossProfitToday: number;
+  lowStockCount: number;
+  inventoryValue: number;
+  customers: number;
+  suppliers: number;
+  monthExpenses: number;
+  outstandingDebts: number;
+  salesSeries: { date: string; total: number }[];
+  topProducts: { productId: string; name: string; quantitySold: number; revenue: number }[];
+  recentActivities: { action: string; entity?: string; at: string }[];
 }
 
+const money = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 export default function DashboardPage() {
-  const productCount = products.useList({ limit: 1 });
-  const customerCount = customers.useList({ limit: 1 });
-
-  const recentSales = useQuery({
-    queryKey: ['sales', { recent: true }],
+  const { user } = useSession();
+  const q = useQuery({
+    queryKey: ['dashboard'],
     queryFn: async () => {
-      const { data } = await api.get<ApiSuccess<Sale[]>>('/sales', { params: { limit: 5 } });
-      return data;
-    },
-  });
-
-  const lowStock = useQuery({
-    queryKey: ['inventory', 'low-stock'],
-    queryFn: async () => {
-      const { data } = await api.get<ApiSuccess<LowStockItem[]>>('/inventory/low-stock');
+      const { data } = await api.get<ApiSuccess<Dashboard>>('/reports/dashboard');
       return data.data;
     },
   });
-
-  const salesToday = (recentSales.data?.data ?? []).reduce((sum, s) => sum + s.total, 0);
-
-  const stats = [
-    { label: 'Products', value: productCount.data?.meta?.total ?? '—', href: '/products' },
-    { label: 'Customers', value: customerCount.data?.meta?.total ?? '—', href: '/customers' },
-    { label: 'Recent sales value', value: salesToday.toFixed(2), href: '/pos' },
-    { label: 'Low stock items', value: lowStock.data?.length ?? '—', href: '/products' },
-  ];
+  const d = q.data;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Your business at a glance.</p>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {greeting()}{user ? `, ${user.name.split(' ')[0]}` : ''}
+          </h1>
+          <p className="text-sm text-muted-foreground">Here&apos;s what&apos;s happening today.</p>
         </div>
         <Link href="/pos">
-          <Button>New sale</Button>
+          <Button>
+            <ShoppingCart className="h-4 w-4" /> New sale
+          </Button>
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((s) => (
-          <Link key={s.label} href={s.href}>
-            <Card className="transition-colors hover:bg-muted/40">
-              <CardHeader>
-                <CardDescription>{s.label}</CardDescription>
-                <CardTitle className="text-3xl">{s.value}</CardTitle>
-              </CardHeader>
-            </Card>
-          </Link>
-        ))}
+      {/* Primary KPIs */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <StatCard label="Total Sales (Today)" value={d ? money(d.todaySales) : '—'} icon={ShoppingCart} tone="blue" />
+        <StatCard label="Gross Profit (Today)" value={d ? money(d.grossProfitToday) : '—'} icon={TrendingUp} tone="green" />
+        <StatCard label="Orders (Today)" value={d ? d.todayOrders : '—'} icon={ClipboardList} tone="purple" />
+        <StatCard label="Inventory Value" value={d ? money(d.inventoryValue) : '—'} icon={Wallet} tone="sky" />
+        <Link href="/inventory">
+          <StatCard label="Low Stock Items" value={d ? d.lowStockCount : '—'} icon={AlertTriangle} tone="red" />
+        </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
+      {/* Chart + top products */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Recent sales</CardTitle>
-            <CardDescription>Latest transactions.</CardDescription>
+            <CardTitle>Sales overview</CardTitle>
           </CardHeader>
           <CardContent>
-            {recentSales.isLoading ? (
+            {q.isLoading ? (
               <p className="text-sm text-muted-foreground">Loading…</p>
-            ) : (recentSales.data?.data ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">No sales yet. Ring one up from the POS.</p>
+            ) : (d?.salesSeries ?? []).length === 0 ? (
+              <p className="py-12 text-center text-sm text-muted-foreground">No sales in the last 7 days.</p>
             ) : (
-              <ul className="divide-y divide-border text-sm">
-                {(recentSales.data?.data ?? []).map((s) => (
-                  <li key={s._id} className="flex items-center justify-between py-2">
-                    <span className="font-medium">{s.invoiceNumber}</span>
-                    <span className="flex items-center gap-2">
-                      <Badge tone={s.status === 'completed' ? 'success' : 'warning'}>{s.status}</Badge>
-                      <span>{s.total.toFixed(2)}</span>
+              <SalesAreaChart data={d?.salesSeries ?? []} />
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Top selling products</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {(d?.topProducts ?? []).length === 0 ? (
+              <p className="text-sm text-muted-foreground">No sales yet.</p>
+            ) : (
+              <ul className="space-y-3">
+                {(d?.topProducts ?? []).map((p, i) => (
+                  <li key={p.productId} className="flex items-center gap-3 text-sm">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                      {i + 1}
                     </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Low stock</CardTitle>
-            <CardDescription>Items at or below reorder level.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {lowStock.isLoading ? (
-              <p className="text-sm text-muted-foreground">Loading…</p>
-            ) : (lowStock.data ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nothing needs restocking.</p>
-            ) : (
-              <ul className="divide-y divide-border text-sm">
-                {(lowStock.data ?? []).map((item) => (
-                  <li key={`${item.productId}`} className="flex items-center justify-between py-2">
-                    <span className="font-medium">{item.name}</span>
-                    <Badge tone="danger">
-                      {item.quantity} / {item.reorderLevel}
-                    </Badge>
+                    <span className="min-w-0 flex-1 truncate font-medium">{p.name}</span>
+                    <span className="text-muted-foreground">{p.quantitySold} sold</span>
+                    <span className="w-20 text-right font-medium">{money(p.revenue)}</span>
                   </li>
                 ))}
               </ul>
@@ -123,6 +118,54 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Secondary stats */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <Link href="/customers">
+          <StatCard label="Total Customers" value={d ? d.customers : '—'} icon={Users} tone="blue" />
+        </Link>
+        <Link href="/suppliers">
+          <StatCard label="Total Suppliers" value={d ? d.suppliers : '—'} icon={Truck} tone="purple" />
+        </Link>
+        <Link href="/expenses">
+          <StatCard label="Expenses (This Month)" value={d ? money(d.monthExpenses) : '—'} icon={Receipt} tone="amber" />
+        </Link>
+        <Link href="/customers">
+          <StatCard label="Outstanding Debts" value={d ? money(d.outstandingDebts) : '—'} icon={HandCoins} tone="red" />
+        </Link>
+      </div>
+
+      {/* Recent activity */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent activity</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {(d?.recentActivities ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">No activity yet.</p>
+          ) : (
+            <ul className="divide-y divide-border text-sm">
+              {(d?.recentActivities ?? []).map((a, i) => (
+                <li key={i} className="flex items-center justify-between py-2">
+                  <span className="flex items-center gap-2">
+                    <Boxes className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{a.action}</span>
+                    {a.entity && <span className="text-muted-foreground">· {a.entity}</span>}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{new Date(a.at).toLocaleString()}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
+}
+
+function greeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
 }

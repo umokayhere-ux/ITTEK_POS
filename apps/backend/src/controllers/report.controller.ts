@@ -31,4 +31,9 @@ export const reportController = {
     const data = await reportService.profitLoss(ctxOf(req).tenantId, range(req));
     sendSuccess(res, data, 'Profit & loss');
   },
+
+  async dashboard(req: Request, res: Response): Promise<void> {
+    const data = await reportService.dashboard(ctxOf(req).tenantId);
+    sendSuccess(res, data, 'Dashboard');
+  },
 };
