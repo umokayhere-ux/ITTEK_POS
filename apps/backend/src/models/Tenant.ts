@@ -21,6 +21,9 @@ export interface TenantDocument extends Document<Types.ObjectId> {
   timezone: string;
   address?: string;
   logoUrl?: string;
+  taxNumber?: string;
+  receiptHeader?: string;
+  receiptFooter?: string;
   status: TenantStatus;
   approvedAt?: Date;
   approvedBy?: Types.ObjectId;
@@ -43,6 +46,9 @@ const tenantSchema = new Schema<TenantDocument>(
     timezone: { type: String, required: true, trim: true },
     address: { type: String, trim: true },
     logoUrl: { type: String, trim: true },
+    taxNumber: { type: String, trim: true },
+    receiptHeader: { type: String, trim: true, maxlength: 300 },
+    receiptFooter: { type: String, trim: true, maxlength: 300 },
     status: {
       type: String,
       enum: Object.values(TENANT_STATUS),

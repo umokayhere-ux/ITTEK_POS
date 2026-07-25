@@ -2,10 +2,13 @@ import { Router } from 'express';
 import authRoutes from './auth.routes.js';
 import cashRegisterRoutes from './cashRegister.routes.js';
 import inventoryRoutes from './inventory.routes.js';
+import paymentRoutes from './payment.routes.js';
 import platformRoutes from './platform.routes.js';
 import purchaseRoutes from './purchase.routes.js';
 import reportRoutes from './report.routes.js';
 import saleRoutes from './sale.routes.js';
+import settingsRoutes from './settings.routes.js';
+import staffRoutes from './staff.routes.js';
 import { resourceRouters } from './resources.js';
 
 const router = Router();
@@ -18,8 +21,11 @@ router.get('/', (_req, res) => {
     resources: [
       'auth',
       'platform',
+      'staff',
+      'settings',
       'inventory',
       'sales',
+      'payments',
       'purchases',
       'cash-registers',
       'reports',
@@ -30,8 +36,11 @@ router.get('/', (_req, res) => {
 
 router.use('/auth', authRoutes);
 router.use('/platform', platformRoutes);
+router.use('/staff', staffRoutes);
+router.use('/settings', settingsRoutes);
 router.use('/inventory', inventoryRoutes);
 router.use('/sales', saleRoutes);
+router.use('/payments', paymentRoutes);
 router.use('/purchases', purchaseRoutes);
 router.use('/cash-registers', cashRegisterRoutes);
 router.use('/reports', reportRoutes);
