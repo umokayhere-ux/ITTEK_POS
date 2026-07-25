@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { inventoryController } from '../../controllers/inventory.controller.js';
 import { authenticate } from '../../middlewares/authenticate.js';
+import { enforceSubscriptionOnWrite } from '../../middlewares/enforceSubscription.js';
 import { validate } from '../../middlewares/validate.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import {
@@ -10,7 +11,7 @@ import {
 } from '../../validators/inventory.validator.js';
 
 const router = Router();
-router.use(authenticate);
+router.use(authenticate, enforceSubscriptionOnWrite);
 
 router.get('/', asyncHandler(inventoryController.levels));
 router.get('/logs', asyncHandler(inventoryController.logs));

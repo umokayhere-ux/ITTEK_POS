@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { cashRegisterController } from '../../controllers/cashRegister.controller.js';
 import { authenticate } from '../../middlewares/authenticate.js';
+import { enforceSubscriptionOnWrite } from '../../middlewares/enforceSubscription.js';
 import { validate } from '../../middlewares/validate.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import {
@@ -10,7 +11,7 @@ import {
 } from '../../validators/cashRegister.validator.js';
 
 const router = Router();
-router.use(authenticate);
+router.use(authenticate, enforceSubscriptionOnWrite);
 
 router.get('/', asyncHandler(cashRegisterController.list));
 router.get('/current', asyncHandler(cashRegisterController.current));

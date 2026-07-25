@@ -30,3 +30,10 @@ services:
         sync: false
       - key: SUPERADMIN_NAME
         value: Super Admin
+      # Optional — set to enable product/business image uploads.
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false

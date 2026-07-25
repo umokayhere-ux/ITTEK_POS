@@ -9,6 +9,8 @@ import reportRoutes from './report.routes.js';
 import saleRoutes from './sale.routes.js';
 import settingsRoutes from './settings.routes.js';
 import staffRoutes from './staff.routes.js';
+import subscriptionRoutes from './subscription.routes.js';
+import uploadRoutes from './upload.routes.js';
 import { resourceRouters } from './resources.js';
 
 const router = Router();
@@ -38,6 +40,8 @@ router.use('/auth', authRoutes);
 router.use('/platform', platformRoutes);
 router.use('/staff', staffRoutes);
 router.use('/settings', settingsRoutes);
+router.use('/subscription', subscriptionRoutes);
+router.use('/uploads', uploadRoutes);
 router.use('/inventory', inventoryRoutes);
 router.use('/sales', saleRoutes);
 router.use('/payments', paymentRoutes);

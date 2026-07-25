@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import type { ZodTypeAny } from 'zod';
 import { authenticate } from '../middlewares/authenticate.js';
+import { enforceSubscriptionOnWrite } from '../middlewares/enforceSubscription.js';
 import { validate } from '../middlewares/validate.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import type { CrudHandlers } from './crudController.js';
@@ -17,7 +18,7 @@ export interface CrudRouterOptions {
  */
 export function createCrudRouter(handlers: CrudHandlers, options: CrudRouterOptions): Router {
   const router = Router();
-  router.use(authenticate);
+  router.use(authenticate, enforceSubscriptionOnWrite);
 
   router.post('/', validate(options.createSchema), asyncHandler(handlers.create));
   router.get('/', asyncHandler(handlers.list));
