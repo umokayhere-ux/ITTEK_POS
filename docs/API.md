@@ -143,6 +143,42 @@ overselling is impossible even under concurrent requests.
 
 ---
 
+## Sales / POS
+
+Base path `/api/v1/sales`. Auth required, tenant-scoped.
+
+| Method & path         | Description                                                  |
+| --------------------- | ------------------------------------------------------------ |
+| `POST /`              | Record a sale (checkout). Decrements stock, tracks credit.   |
+| `GET /`               | List sales. Filters: `?branchId`, `?customerId`, `?status`.  |
+| `GET /:id`            | Sale detail (with line items and payments).                  |
+| `POST /:id/refund`    | Full refund: restores stock, clears any customer balance.    |
+
+**Create body:**
+
+```jsonc
+// POST /api/v1/sales
+{
+  "branchId": "665f...b8c",
+  "customerId": "665f...d21",          // optional; required if underpaid (credit)
+  "items": [
+    { "productId": "665f...aa1", "quantity": 2 },              // price from catalog
+    { "productId": "665f...aa2", "quantity": 1, "discount": 5 } // per-line discount
+  ],
+  "payments": [{ "method": "cash", "amount": 50 }],
+  "notes": "walk-in"
+}
+```
+
+Pricing and tax are taken from the product catalog (an optional `unitPrice`
+override is allowed). Tax applies to the post-discount line net. If payments
+cover the total, the sale is `completed` with any `changeDue`; if they fall
+short, it becomes a `credit` sale (customer required) and the shortfall is added
+to the customer's `outstandingBalance`. Stock for inventory-tracked products is
+decremented atomically via the inventory ledger.
+
+---
+
 ## Conventions for future endpoints
 
 - **Pagination:** `?page=1&limit=20`, returned in `meta`.

@@ -67,6 +67,23 @@ async function getQuantity(tenantId: string, productId: string, branchId: string
 }
 
 export const inventoryService = {
+  /** Low-level signed movement primitive, reused by the sales module. */
+  move(
+    ctx: AuditContext,
+    input: {
+      productId: string;
+      branchId: string;
+      change: number;
+      type: StockMovementType;
+      reason?: string;
+      reference?: string;
+    },
+  ): Promise<StockLevelDocument> {
+    return applyMovement(ctx, input);
+  },
+
+  getQuantity,
+
   stockIn(
     ctx: AuditContext,
     p: { productId: string; branchId: string; quantity: number; reason?: string; reference?: string },

@@ -34,10 +34,21 @@ frontend pages → reusable UI components → error handling → tests → docum
 - [x] Stock-in / stock-out / adjust-to-target / branch-to-branch transfer
 - [x] Low-stock report (join with product reorder level), levels & logs listing
 
-## ▶ Milestone 2b — Sales / POS
+## ✅ Milestone 2b — Sales / POS core
 
-Cart checkout, sale + line items, payments, automatic stock decrement via the
-inventory ledger, receipts, returns/refunds, cash register.
+- [x] Sale with embedded priced line items; catalog-authoritative pricing & tax
+- [x] Deterministic money math (discount-before-tax) with unit tests
+- [x] Multi-tender payments; automatic credit balance for partially paid sales
+- [x] Automatic stock decrement through the inventory ledger, with pre-check
+      and compensation so partial sales are never persisted
+- [x] Per-tenant atomic invoice numbering (Counter)
+- [x] Full refund: restores stock and clears customer credit
+- [x] Endpoints: create / list / detail / refund
+
+## ▶ Next — Cash register, purchases, expenses, reports, then frontend screens
+
+Cash register open/close & movements; purchase orders & receiving; expenses &
+debts; sales/inventory/P&L reports; then the frontend UIs for all modules.
 
 ## Milestone 3 — RBAC & staff management
 
