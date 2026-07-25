@@ -25,6 +25,7 @@ export const createSaleSchema = z.object({
   customerId: objectId.optional(),
   items: z.array(saleItemInput).min(1, 'A sale needs at least one item'),
   payments: z.array(paymentInput).default([]),
+  discount: z.number().min(0).default(0),
   notes: z.string().max(500).optional(),
 });
 

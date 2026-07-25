@@ -49,20 +49,24 @@ export const saleService = {
     });
 
     const totals = computeSaleTotals(lineInputs);
+    // Apply an optional order-level discount on top of any per-line discounts.
+    const orderDiscount = round2(Math.min(input.discount ?? 0, totals.total));
+    const grandTotal = round2(totals.total - orderDiscount);
+    const discountTotal = round2(totals.discountTotal + orderDiscount);
     const amountPaid = round2(input.payments.reduce((sum, p) => sum + p.amount, 0));
 
     // 3. Determine settlement / status.
     let status: SaleDocument['status'] = SALE_STATUS.COMPLETED;
     let changeDue = 0;
     let balanceDue = 0;
-    if (amountPaid >= totals.total) {
-      changeDue = round2(amountPaid - totals.total);
+    if (amountPaid >= grandTotal) {
+      changeDue = round2(amountPaid - grandTotal);
     } else {
       if (!input.customerId) {
         throw AppError.badRequest('A customer is required for a credit (partially paid) sale');
       }
       status = SALE_STATUS.CREDIT;
-      balanceDue = round2(totals.total - amountPaid);
+      balanceDue = round2(grandTotal - amountPaid);
     }
 
     // 4. Pre-check stock for inventory-tracked products.
@@ -102,8 +106,8 @@ export const saleService = {
       items,
       subtotal: totals.subtotal,
       taxTotal: totals.taxTotal,
-      discountTotal: totals.discountTotal,
-      total: totals.total,
+      discountTotal,
+      total: grandTotal,
       amountPaid,
       changeDue,
       balanceDue,
@@ -157,7 +161,7 @@ export const saleService = {
       action: 'sale.create',
       entity: 'Sale',
       entityId: sale._id.toString(),
-      metadata: { invoiceNumber, total: totals.total },
+      metadata: { invoiceNumber, total: grandTotal },
     });
 
     return sale;

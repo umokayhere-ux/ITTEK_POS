@@ -31,8 +31,11 @@ export default function PosPage() {
   const [scanError, setScanError] = useState('');
   const [cart, setCart] = useState<CartLine[]>([]);
   const [branchId, setBranchId] = useState('');
-  const [method, setMethod] = useState('cash');
-  const [tendered, setTendered] = useState('');
+  const [discount, setDiscount] = useState('');
+  const [payments, setPayments] = useState<{ method: string; amount: string }[]>([
+    { method: 'cash', amount: '' },
+  ]);
+  const [held, setHeld] = useState<CartLine[][]>([]);
   const [receipt, setReceipt] = useState<Sale | null>(null);
 
   const productList = products.useList({ search: search || undefined, limit: 20 });
@@ -60,7 +63,11 @@ export default function PosPage() {
     return { subtotal, tax, total };
   }, [cart]);
 
-  const change = Math.max(0, (Number(tendered) || 0) - totals.total);
+  const discountValue = Math.min(Number(discount) || 0, totals.total);
+  const netTotal = Math.round((totals.total - discountValue) * 100) / 100;
+  const amountPaid = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  const change = Math.max(0, amountPaid - netTotal);
+  const balanceDue = Math.max(0, netTotal - amountPaid);
 
   function addToCart(product: Product) {
     setCart((prev) => {
@@ -107,10 +114,18 @@ export default function PosPage() {
 
   const checkout = useMutation({
     mutationFn: async () => {
+      // Default a single payment to the full net total when left blank.
+      const effectivePayments =
+        amountPaid > 0
+          ? payments
+              .filter((p) => Number(p.amount) > 0)
+              .map((p) => ({ method: p.method, amount: Number(p.amount) }))
+          : [{ method: payments[0]?.method ?? 'cash', amount: netTotal }];
       const payload = {
         branchId: effectiveBranch,
         items: cart.map((l) => ({ productId: l.product._id, quantity: l.quantity })),
-        payments: [{ method, amount: Number(tendered) || totals.total }],
+        payments: effectivePayments,
+        discount: discountValue,
       };
       const { data } = await api.post<ApiSuccess<Sale>>('/sales', payload);
       return data.data;
@@ -118,9 +133,24 @@ export default function PosPage() {
     onSuccess: (sale) => {
       setReceipt(sale);
       setCart([]);
-      setTendered('');
+      setDiscount('');
+      setPayments([{ method: 'cash', amount: '' }]);
     },
   });
+
+  function holdSale() {
+    if (cart.length === 0) return;
+    setHeld((h) => [...h, cart]);
+    setCart([]);
+    setDiscount('');
+    setPayments([{ method: 'cash', amount: '' }]);
+  }
+
+  function resumeSale(index: number) {
+    const resumed = held[index];
+    setHeld((h) => h.filter((_, i) => i !== index));
+    setCart(resumed);
+  }
 
   const canCheckout = cart.length > 0 && effectiveBranch && !checkout.isPending;
 
@@ -231,40 +261,77 @@ export default function PosPage() {
               <span>Tax</span>
               <span>{totals.tax.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-base font-semibold">
-              <span>Total</span>
-              <span>{totals.total.toFixed(2)}</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="method">Payment</Label>
-              <Select id="method" value={method} onChange={(e) => setMethod(e.target.value)}>
-                {PAYMENT_METHODS.map((m) => (
-                  <option key={m.value} value={m.value}>
-                    {m.label}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="tendered">Amount</Label>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-muted-foreground">Discount</span>
               <Input
-                id="tendered"
                 type="number"
                 step="0.01"
-                placeholder={totals.total.toFixed(2)}
-                value={tendered}
-                onChange={(e) => setTendered(e.target.value)}
+                placeholder="0.00"
+                value={discount}
+                onChange={(e) => setDiscount(e.target.value)}
+                className="h-8 w-24 text-right"
               />
+            </div>
+            <div className="flex justify-between text-base font-semibold">
+              <span>Total</span>
+              <span>{netTotal.toFixed(2)}</span>
             </div>
           </div>
 
-          {Number(tendered) > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Payments</Label>
+              <button
+                type="button"
+                className="text-xs text-primary hover:underline"
+                onClick={() => setPayments((p) => [...p, { method: 'cash', amount: '' }])}
+              >
+                + Split
+              </button>
+            </div>
+            {payments.map((p, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <Select
+                  value={p.method}
+                  onChange={(e) =>
+                    setPayments((ps) => ps.map((x, i) => (i === idx ? { ...x, method: e.target.value } : x)))
+                  }
+                  className="flex-1"
+                >
+                  {PAYMENT_METHODS.map((m) => (
+                    <option key={m.value} value={m.value}>
+                      {m.label}
+                    </option>
+                  ))}
+                </Select>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder={idx === 0 ? netTotal.toFixed(2) : '0.00'}
+                  value={p.amount}
+                  onChange={(e) =>
+                    setPayments((ps) => ps.map((x, i) => (i === idx ? { ...x, amount: e.target.value } : x)))
+                  }
+                  className="w-28"
+                />
+                {payments.length > 1 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-label="Remove payment"
+                    onClick={() => setPayments((ps) => ps.filter((_, i) => i !== idx))}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {amountPaid > 0 && (
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Change</span>
-              <span className="font-medium">{change.toFixed(2)}</span>
+              <span className="text-muted-foreground">{balanceDue > 0 ? 'Balance due' : 'Change'}</span>
+              <span className="font-medium">{(balanceDue > 0 ? balanceDue : change).toFixed(2)}</span>
             </div>
           )}
 
@@ -272,9 +339,27 @@ export default function PosPage() {
             <p className="text-sm text-destructive">{getApiErrorMessage(checkout.error)}</p>
           )}
 
-          <Button className="w-full" disabled={!canCheckout} loading={checkout.isPending} onClick={() => checkout.mutate()}>
-            Complete sale
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" disabled={cart.length === 0} onClick={holdSale}>
+              Hold
+            </Button>
+            <Button className="flex-1" disabled={!canCheckout} loading={checkout.isPending} onClick={() => checkout.mutate()}>
+              Complete sale
+            </Button>
+          </div>
+
+          {held.length > 0 && (
+            <div className="rounded-md border border-border p-2 text-sm">
+              <div className="mb-1 text-xs font-medium text-muted-foreground">Held sales</div>
+              <div className="flex flex-wrap gap-2">
+                {held.map((h, i) => (
+                  <Button key={i} variant="outline" size="sm" onClick={() => resumeSale(i)}>
+                    Resume #{i + 1} ({h.length})
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {receipt && (
             <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">
