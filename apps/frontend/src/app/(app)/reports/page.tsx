@@ -2,9 +2,12 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { toCsv, downloadCsv } from '@/lib/csv';
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table';
 import { api } from '@/lib/api';
 import type { ApiSuccess, ProfitLoss, SalesSummary, TopProduct } from '@/lib/types';
@@ -53,6 +56,23 @@ export default function ReportsPage() {
             <Label htmlFor="to">To</Label>
             <Input id="to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
           </div>
+          <Button
+            variant="outline"
+            disabled={!top.data}
+            onClick={() =>
+              downloadCsv(
+                'top-products.csv',
+                toCsv((top.data ?? []) as unknown as Record<string, unknown>[], [
+                  'name',
+                  'sku',
+                  'quantitySold',
+                  'revenue',
+                ]),
+              )
+            }
+          >
+            <Download className="h-4 w-4" /> Export
+          </Button>
         </div>
       </div>
 

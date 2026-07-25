@@ -3,7 +3,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Plus, Pencil, Trash2, Wallet } from 'lucide-react';
+import { Plus, Pencil, Trash2, Wallet, Download } from 'lucide-react';
+import { toCsv, downloadCsv } from '@/lib/csv';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import { PaymentDialog } from '@/components/payment-dialog';
@@ -62,9 +63,29 @@ export default function CustomersPage() {
           <h1 className="text-2xl font-bold tracking-tight">Customers</h1>
           <p className="text-sm text-muted-foreground">Manage customers and their credit.</p>
         </div>
-        <Button onClick={openCreate}>
-          <Plus className="h-4 w-4" /> Add customer
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={async () => {
+              const { items } = await customers.client.list({ limit: 1000 });
+              downloadCsv(
+                'customers.csv',
+                toCsv(items as unknown as Record<string, unknown>[], [
+                  'name',
+                  'phone',
+                  'email',
+                  'creditLimit',
+                  'outstandingBalance',
+                ]),
+              );
+            }}
+          >
+            <Download className="h-4 w-4" /> Export
+          </Button>
+          <Button onClick={openCreate}>
+            <Plus className="h-4 w-4" /> Add customer
+          </Button>
+        </div>
       </div>
 
       <Input

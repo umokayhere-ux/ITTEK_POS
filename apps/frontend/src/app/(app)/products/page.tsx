@@ -3,7 +3,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Download, Upload } from 'lucide-react';
+import { toCsv, downloadCsv, parseCsv } from '@/lib/csv';
+import { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import { FieldError } from '@/components/ui/field-error';
@@ -29,6 +31,47 @@ export default function ProductsPage() {
   const remove = products.useRemove();
 
   const form = useForm<ProductFormValues>({ resolver: zodResolver(productFormSchema) });
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+
+  const EXPORT_COLUMNS = ['name', 'sku', 'barcode', 'costPrice', 'sellingPrice', 'taxRate', 'reorderLevel'];
+
+  async function exportCsv() {
+    const { items } = await products.client.list({ limit: 1000 });
+    downloadCsv('products.csv', toCsv(items as unknown as Record<string, unknown>[], EXPORT_COLUMNS));
+  }
+
+  async function importCsv(file: File) {
+    setImporting(true);
+    try {
+      const rows = parseCsv(await file.text());
+      let ok = 0;
+      let failed = 0;
+      for (const r of rows) {
+        if (!r.name || !r.sku) {
+          failed += 1;
+          continue;
+        }
+        try {
+          await create.mutateAsync({
+            name: r.name,
+            sku: r.sku,
+            barcode: r.barcode || undefined,
+            costPrice: Number(r.costPrice) || 0,
+            sellingPrice: Number(r.sellingPrice) || 0,
+            taxRate: Number(r.taxRate) || 0,
+            reorderLevel: Number(r.reorderLevel) || 0,
+          } as never);
+          ok += 1;
+        } catch {
+          failed += 1;
+        }
+      }
+      alert(`Import complete: ${ok} added, ${failed} skipped/failed.`);
+    } finally {
+      setImporting(false);
+    }
+  }
 
   function openCreate() {
     setEditing(null);
@@ -76,9 +119,28 @@ export default function ProductsPage() {
           <h1 className="text-2xl font-bold tracking-tight">Products</h1>
           <p className="text-sm text-muted-foreground">Manage your catalog.</p>
         </div>
-        <Button onClick={openCreate}>
-          <Plus className="h-4 w-4" /> Add product
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={exportCsv}>
+            <Download className="h-4 w-4" /> Export
+          </Button>
+          <Button variant="outline" loading={importing} onClick={() => fileRef.current?.click()}>
+            <Upload className="h-4 w-4" /> Import
+          </Button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) importCsv(f);
+              e.target.value = '';
+            }}
+          />
+          <Button onClick={openCreate}>
+            <Plus className="h-4 w-4" /> Add product
+          </Button>
+        </div>
       </div>
 
       <Input
