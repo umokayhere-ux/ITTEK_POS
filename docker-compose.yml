@@ -1,7 +1,8 @@
 # ---------------------------------------------------------------------------
-# iTtEk POS - Local development stack.
-# Brings up MongoDB, Redis, the backend API and the Next.js frontend.
-# Usage: cp .env.example .env && docker compose up
+# iTtEk POS - local stack. Runs MongoDB, Redis, and ONE unified app container
+# that serves both the web UI and the API on a single port.
+# Usage: cp .env.example .env && docker compose up --build
+# Then open http://localhost:4000
 # ---------------------------------------------------------------------------
 services:
   mongo:
@@ -33,36 +34,26 @@ services:
       timeout: 5s
       retries: 5
 
-  backend:
+  app:
     build:
-      context: ./apps/backend
+      context: .
       dockerfile: Dockerfile
-      target: development
     restart: unless-stopped
-    env_file:
-      - ./apps/backend/.env
     depends_on:
       mongo:
         condition: service_healthy
       redis:
         condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      MONGODB_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-ittek}:${MONGO_INITDB_ROOT_PASSWORD:-ittek_dev_password}@mongo:27017/ittek_pos?authSource=admin
+      REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev_access_secret_change_me_at_least_32_chars_x}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev_refresh_secret_change_me_at_least_32_chars_x}
+      CORS_ORIGINS: http://localhost:4000
     ports:
-      - '${BACKEND_PORT:-4000}:4000'
-    volumes:
-      - ./apps/backend/src:/app/src
-
-  frontend:
-    build:
-      context: ./apps/frontend
-      dockerfile: Dockerfile
-      target: development
-    restart: unless-stopped
-    env_file:
-      - ./apps/frontend/.env
-    depends_on:
-      - backend
-    ports:
-      - '${FRONTEND_PORT:-3000}:3000'
+      - '${APP_PORT:-4000}:4000'
 
 volumes:
   mongo_data:

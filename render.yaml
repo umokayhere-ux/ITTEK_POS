@@ -1,0 +1,23 @@
+# Render Blueprint — deploys iTtEk POS as a SINGLE web service.
+# The service builds the frontend + backend and serves both from one Node
+# process. Provide a MongoDB connection string (e.g. MongoDB Atlas) as
+# MONGODB_URI in the Render dashboard; the JWT secrets are auto-generated.
+services:
+  - type: web
+    name: ittek-pos
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build:unified
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false

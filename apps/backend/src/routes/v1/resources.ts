@@ -6,6 +6,7 @@ import {
   brandRepository,
   categoryRepository,
   customerRepository,
+  expenseRepository,
   productRepository,
   supplierRepository,
   unitRepository,
@@ -44,5 +45,9 @@ export const resourceRouters: Record<string, Router> = {
   suppliers: createCrudRouter(createCrudController(supplierRepository, 'Supplier'), {
     createSchema: v.createSupplierSchema,
     updateSchema: v.updateSupplierSchema,
+  }),
+  expenses: createCrudRouter(createCrudController(expenseRepository, 'Expense'), {
+    createSchema: v.createExpenseSchema,
+    updateSchema: v.updateExpenseSchema,
   }),
 };

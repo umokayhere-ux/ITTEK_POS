@@ -42,39 +42,74 @@ npm run dev:frontend     # http://localhost:3000
 
 You will need a MongoDB instance running (see Docker below for the easiest path).
 
-## Quick start (Docker)
+## Quick start (Docker — one command)
 
 ```bash
 cp .env.example .env
-cp apps/backend/.env.example apps/backend/.env
-cp apps/frontend/.env.example apps/frontend/.env
 docker compose up --build
+# then open http://localhost:4000
 ```
 
-This brings up MongoDB, Redis, the API and the web app together.
+This runs MongoDB, Redis, and a **single unified app container** that serves the
+web UI and the API together on port 4000.
+
+## Unified build (single deployable)
+
+The frontend is built as a static export and served by the backend, so the whole
+product ships as **one Node service** — no separate frontend host.
+
+```bash
+npm run build:unified   # builds frontend + backend, copies web build into the API
+npm start               # one process serves web UI + API at http://localhost:4000
+```
+
+## Deploy to Render (single service)
+
+A [`render.yaml`](render.yaml) blueprint is included. In Render, create a new
+Blueprint from this repo and set **`MONGODB_URI`** (e.g. a MongoDB Atlas
+connection string) and optionally `CORS_ORIGINS`. The JWT secrets are generated
+automatically. Render runs:
+
+- **Build:** `npm install && npm run build:unified`
+- **Start:** `npm start`
+- **Health check:** `/health`
+
+That's it — one service serves everything. (You can also deploy the root
+[`Dockerfile`](Dockerfile) as a Docker service.)
 
 ## Useful scripts (run from the repo root)
 
 | Command                    | Description                              |
 | -------------------------- | ---------------------------------------- |
 | `npm run dev:backend`      | Start the API in watch mode              |
-| `npm run dev:frontend`     | Start the web app in dev mode            |
+| `npm run dev:frontend`     | Start the web app in dev mode (port 3000)|
+| `npm run build:unified`    | Build one deployable (web served by API) |
+| `npm start`                | Run the unified app (web UI + API)       |
 | `npm run build`            | Build all workspaces                     |
 | `npm run test`             | Run all workspace tests                  |
 | `npm run typecheck`        | Typecheck all workspaces                 |
 | `npm run lint`             | Lint all workspaces                      |
 
+> For split local dev, also `cp apps/frontend/.env.example apps/frontend/.env`
+> so the dev frontend (port 3000) knows the backend URL.
+
 ## What works today
 
-- **Multi-tenant registration** — one request provisions a Tenant, its Owner
-  account, a trial Subscription and an audit log entry, then returns tokens.
-- **JWT auth** — short-lived access token + refresh token, with silent refresh
-  on the client.
-- **Tenant isolation** — every tenant-scoped model carries `tenantId`, and the
-  authenticated `tenantId` is derived from the verified token, never the client.
-- **Consistent API envelope**, global error handling, rate limiting, Helmet, CORS.
-- **Themed, responsive UI** — landing, login, register and a dashboard shell with
-  light/dark mode.
+- **Multi-tenant auth** — registration provisions a Tenant + Owner + trial
+  subscription; JWT access/refresh with silent client refresh.
+- **Catalog & partners** — products, categories, brands, units, customers,
+  suppliers, branches (full CRUD, search, pagination, soft-delete).
+- **Inventory** — per-branch stock levels + movement ledger; stock in/out,
+  adjust, transfer, low-stock; overselling is impossible.
+- **Sales / POS** — checkout with catalog pricing, payments, credit sales,
+  automatic stock decrement, refunds; per-tenant invoice numbers.
+- **Purchases** — receiving stock, cost updates, supplier balances.
+- **Cash register** — open/close, cash movements, expected-vs-counted.
+- **Expenses** and **reports** — sales summary, top products, simple P&L.
+- **Web UI** — dashboard (live data), POS terminal, and management screens for
+  products, customers, suppliers; light/dark themes.
+- **Tenant isolation** everywhere — `tenantId` always comes from the verified
+  token, never the request body.
 
 ## Documentation
 

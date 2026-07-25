@@ -21,6 +21,9 @@ const envSchema = z.object({
   JWT_ACCESS_TTL: z.string().default('15m'),
   JWT_REFRESH_TTL: z.string().default('7d'),
   BCRYPT_SALT_ROUNDS: z.coerce.number().int().min(10).max(15).default(12),
+  // Optional path to the built frontend (static export). When present, the
+  // backend serves the web app alongside the API as a single deployment.
+  PUBLIC_DIR: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

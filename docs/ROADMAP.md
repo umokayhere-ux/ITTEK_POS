@@ -54,10 +54,25 @@ frontend pages → reusable UI components → error handling → tests → docum
 - [x] Dashboard wired to real data (counts, recent sales, low stock)
 - [x] Reusable UI: table, modal dialog, badge
 
-## ▶ Next — Cash register, purchases, expenses, reports
+## ✅ Milestone 4 — Operations backend
 
-Cash register open/close & movements; purchase orders & receiving; expenses &
-debts; sales/inventory/P&L report endpoints and screens.
+- [x] Purchases: receive stock, refresh cost price, supplier balances
+- [x] Cash register: open/close, cash movements, expected-vs-counted difference
+- [x] Expenses: categorized expense tracking (via the CRUD engine)
+- [x] Reports: sales summary + per-day series, top products, simple P&L
+
+## ✅ Milestone 5 — Unified single-service deployment
+
+- [x] Frontend built as a static export and served by the backend
+- [x] One Node process serves web UI + API on a single port
+- [x] Root Dockerfile, `render.yaml` blueprint, single-container docker-compose
+- [x] Same-origin API (`/api/v1`); verified end-to-end (web + API + 404)
+
+## ▶ Next — remaining modules
+
+Debts & payments UI, purchases/expenses/cash-register frontend screens,
+report charts, RBAC granularity & staff management, subscriptions/billing,
+super-admin, notifications, receipts printing, offline sync, OpenAPI/Swagger.
 
 ## Milestone 3 — RBAC & staff management
 

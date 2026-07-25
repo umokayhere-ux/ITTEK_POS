@@ -179,6 +179,49 @@ decremented atomically via the inventory ledger.
 
 ---
 
+## Purchases
+
+Base path `/api/v1/purchases`. Auth required, tenant-scoped.
+
+| Method & path | Description                                                        |
+| ------------- | ------------------------------------------------------------------ |
+| `POST /`      | Record a received purchase. Adds stock, updates cost & supplier balance. |
+| `GET /`       | List purchases. Filters: `?supplierId`, `?branchId`.               |
+| `GET /:id`    | Purchase detail.                                                   |
+
+Body: `{ supplierId, branchId, items: [{ productId, quantity, unitCost }], amountPaid?, notes? }`.
+
+## Cash register
+
+Base path `/api/v1/cash-registers`. Auth required, tenant-scoped.
+
+| Method & path            | Description                                          |
+| ------------------------ | ---------------------------------------------------- |
+| `POST /open`             | Open a register. Body: `{ branchId, openingBalance }`. Fails if one is already open for the branch. |
+| `GET /current?branchId`  | The currently open register for a branch, if any.    |
+| `POST /:id/movements`    | Record cash in/out. Body: `{ direction: "in"\|"out", amount, reason? }`. |
+| `GET /:id/movements`     | List a register's cash movements.                    |
+| `POST /:id/close`        | Close a register. Body: `{ countedCash }` → computes the difference. |
+| `GET /`                  | List registers. Filters: `?branchId`, `?status`.     |
+
+## Expenses
+
+Base path `/api/v1/expenses` — standard CRUD (see the resource table above).
+Body: `{ category, amount, branchId?, description?, date?, paymentMethod?, isRecurring? }`.
+
+## Reports
+
+Base path `/api/v1/reports`. Auth required, tenant-scoped. All accept
+`?from`, `?to` (ISO dates) and `?branchId`.
+
+| Method & path            | Description                                              |
+| ------------------------ | ------------------------------------------------------- |
+| `GET /sales-summary`     | Totals, average, and a per-day sales series.            |
+| `GET /top-products`      | Best sellers by quantity and revenue (`?limit`).        |
+| `GET /profit-loss`       | Revenue vs. expenses (cash-basis operating summary).    |
+
+---
+
 ## Conventions for future endpoints
 
 - **Pagination:** `?page=1&limit=20`, returned in `meta`.

@@ -17,12 +17,15 @@
     "dev:backend": "npm run dev --workspace @ittek/backend",
     "dev:frontend": "npm run dev --workspace @ittek/frontend",
     "build": "npm run build --workspaces --if-present",
+    "build:unified": "cross-env NEXT_PUBLIC_API_URL=/api/v1 npm run build -w @ittek/frontend && npm run build -w @ittek/backend && node scripts/prepare-unified.mjs",
+    "start": "npm run start -w @ittek/backend",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "prettier": "^3.3.3"
   }
 }

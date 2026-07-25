@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { EXPENSE_CATEGORIES } from '../models/Expense.js';
 
 /** 24-char hex MongoDB ObjectId. */
 const objectId = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id');
@@ -82,6 +83,17 @@ export const createSupplierSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
+// --- Expense ---
+export const createExpenseSchema = z.object({
+  branchId: optionalId,
+  category: z.enum(EXPENSE_CATEGORIES),
+  amount: z.number().min(0),
+  description: z.string().max(500).optional(),
+  date: z.coerce.date().optional(),
+  paymentMethod: z.string().max(40).optional(),
+  isRecurring: z.boolean().optional(),
+});
+
 // Update schemas: every field optional, and reject empty payloads.
 const nonEmpty = (schema: z.ZodObject<z.ZodRawShape>) =>
   schema.partial().refine((data) => Object.keys(data).length > 0, {
@@ -95,3 +107,4 @@ export const updateUnitSchema = nonEmpty(createUnitSchema);
 export const updateProductSchema = nonEmpty(createProductSchema);
 export const updateCustomerSchema = nonEmpty(createCustomerSchema);
 export const updateSupplierSchema = nonEmpty(createSupplierSchema);
+export const updateExpenseSchema = nonEmpty(createExpenseSchema);

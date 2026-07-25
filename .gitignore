@@ -40,3 +40,6 @@ Thumbs.db
 
 # Docker volumes
 data/
+
+# Unified deploy: frontend build copied into the backend
+apps/backend/public/

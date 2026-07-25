@@ -1,5 +1,6 @@
 import { BaseRepository } from '../core/BaseRepository.js';
 import { Branch, type BranchDocument } from '../models/Branch.js';
+import { Expense, type ExpenseDocument } from '../models/Expense.js';
 import { Brand, type BrandDocument } from '../models/Brand.js';
 import { Category, type CategoryDocument } from '../models/Category.js';
 import { Customer, type CustomerDocument } from '../models/Customer.js';
@@ -25,4 +26,8 @@ export const supplierRepository = new BaseRepository<SupplierDocument>(Supplier,
   'name',
   'phone',
   'email',
+]);
+export const expenseRepository = new BaseRepository<ExpenseDocument>(Expense, [
+  'description',
+  'category',
 ]);

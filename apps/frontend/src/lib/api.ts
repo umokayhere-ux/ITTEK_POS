@@ -2,7 +2,10 @@ import axios, { AxiosError, type AxiosInstance } from 'axios';
 import type { ApiError, AuthTokens } from './types';
 import { authStorage } from './auth-storage';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
+// In the unified deployment the frontend is served by the backend, so the API
+// lives at the same origin under `/api/v1`. For split local dev, set
+// NEXT_PUBLIC_API_URL to the backend's full URL (see apps/frontend/.env.example).
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '/api/v1';
 
 export const api: AxiosInstance = axios.create({
   baseURL: API_URL,
