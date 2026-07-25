@@ -34,13 +34,19 @@ export async function enforceSubscriptionOnWrite(
   _res: Response,
   next: NextFunction,
 ): Promise<void> {
-  if (!WRITE_METHODS.has(req.method) || !req.auth) return next();
-  const sub = await Subscription.findOne({ tenantId: req.auth.tenantId }).exec();
-  if (effectiveStatus(sub) === 'expired') {
-    throw new AppError(
-      402,
-      'Your subscription has expired. The workspace is read-only until it is renewed.',
-    );
+  try {
+    if (!WRITE_METHODS.has(req.method) || !req.auth) return next();
+    const sub = await Subscription.findOne({ tenantId: req.auth.tenantId }).exec();
+    if (effectiveStatus(sub) === 'expired') {
+      return next(
+        new AppError(
+          402,
+          'Your subscription has expired. The workspace is read-only until it is renewed.',
+        ),
+      );
+    }
+    next();
+  } catch (err) {
+    next(err);
   }
-  next();
 }

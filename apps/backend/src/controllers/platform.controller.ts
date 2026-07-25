@@ -1,6 +1,12 @@
 import type { Request, Response } from 'express';
 import { TENANT_STATUS } from '../constants/index.js';
 import { buildMeta, parseListQuery } from '../core/pagination.js';
+import { Announcement } from '../models/Announcement.js';
+import {
+  PlatformSettings,
+  getPlatformSettings,
+  invalidatePlatformSettingsCache,
+} from '../models/PlatformSettings.js';
 import { platformService } from '../services/platform.service.js';
 import { AppError } from '../utils/AppError.js';
 import { sendSuccess } from '../utils/apiResponse.js';
@@ -57,5 +63,49 @@ export const platformController = {
   async reactivate(req: Request, res: Response): Promise<void> {
     const tenant = await platformService.setStatus(req.params.id as string, TENANT_STATUS.ACTIVE, adminId(req));
     sendSuccess(res, tenant, 'Business reactivated');
+  },
+
+  async listAnnouncements(req: Request, res: Response): Promise<void> {
+    adminId(req);
+    const items = await Announcement.find().sort({ createdAt: -1 }).exec();
+    sendSuccess(res, items, 'Announcements');
+  },
+
+  async createAnnouncement(req: Request, res: Response): Promise<void> {
+    adminId(req);
+    const { title, body, level } = req.body as { title: string; body: string; level?: string };
+    if (!title || !body) throw AppError.badRequest('Title and body are required');
+    const doc = await Announcement.create({ title, body, level: level === 'warning' ? 'warning' : 'info' });
+    sendSuccess(res, doc, 'Announcement published', 201);
+  },
+
+  async deleteAnnouncement(req: Request, res: Response): Promise<void> {
+    adminId(req);
+    await Announcement.deleteOne({ _id: req.params.id }).exec();
+    sendSuccess(res, { id: req.params.id }, 'Announcement removed');
+  },
+
+  async getSettings(req: Request, res: Response): Promise<void> {
+    adminId(req);
+    const settings = await getPlatformSettings();
+    sendSuccess(res, settings, 'Platform settings');
+  },
+
+  async updateSettings(req: Request, res: Response): Promise<void> {
+    adminId(req);
+    const { maintenanceMode, maintenanceMessage } = req.body as {
+      maintenanceMode?: boolean;
+      maintenanceMessage?: string;
+    };
+    const update: Record<string, unknown> = {};
+    if (typeof maintenanceMode === 'boolean') update.maintenanceMode = maintenanceMode;
+    if (typeof maintenanceMessage === 'string') update.maintenanceMessage = maintenanceMessage;
+    const settings = await PlatformSettings.findOneAndUpdate({}, update, {
+      new: true,
+      upsert: true,
+      setDefaultsOnInsert: true,
+    }).exec();
+    invalidatePlatformSettingsCache();
+    sendSuccess(res, settings, 'Platform settings updated');
   },
 };

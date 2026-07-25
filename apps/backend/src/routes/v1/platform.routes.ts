@@ -20,4 +20,11 @@ router.post('/tenants/:id/reject', validate(rejectTenantSchema), asyncHandler(pl
 router.post('/tenants/:id/suspend', asyncHandler(platformController.suspend));
 router.post('/tenants/:id/reactivate', asyncHandler(platformController.reactivate));
 
+router.get('/announcements', asyncHandler(platformController.listAnnouncements));
+router.post('/announcements', asyncHandler(platformController.createAnnouncement));
+router.delete('/announcements/:id', asyncHandler(platformController.deleteAnnouncement));
+
+router.get('/settings', asyncHandler(platformController.getSettings));
+router.patch('/settings', asyncHandler(platformController.updateSettings));
+
 export default router;

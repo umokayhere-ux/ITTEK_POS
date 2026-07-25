@@ -1,7 +1,9 @@
 import { Router } from 'express';
+import announcementRoutes from './announcement.routes.js';
 import auditLogRoutes from './auditLog.routes.js';
 import authRoutes from './auth.routes.js';
 import cashRegisterRoutes from './cashRegister.routes.js';
+import { maintenanceGuard } from '../../middlewares/maintenance.js';
 import inventoryRoutes from './inventory.routes.js';
 import notificationRoutes from './notification.routes.js';
 import paymentRoutes from './payment.routes.js';
@@ -38,8 +40,13 @@ router.get('/', (_req, res) => {
   });
 });
 
+// Block tenant API when the platform is in maintenance mode (platform admin
+// routes stay reachable — see the guard's allowlist).
+router.use(maintenanceGuard);
+
 router.use('/auth', authRoutes);
 router.use('/platform', platformRoutes);
+router.use('/announcements', announcementRoutes);
 router.use('/staff', staffRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/subscription', subscriptionRoutes);

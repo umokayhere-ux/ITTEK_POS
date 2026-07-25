@@ -84,6 +84,42 @@ function SubscriptionBanner() {
   return null;
 }
 
+interface AnnouncementItem {
+  _id: string;
+  title: string;
+  body: string;
+  level: 'info' | 'warning';
+}
+
+/** Shows active platform announcements from the super admin. */
+function AnnouncementsBanner() {
+  const query = useQuery({
+    queryKey: ['announcements'],
+    queryFn: async () => {
+      const { data } = await api.get<ApiSuccess<AnnouncementItem[]>>('/announcements');
+      return data.data;
+    },
+  });
+  const items = query.data ?? [];
+  if (items.length === 0) return null;
+  return (
+    <div>
+      {items.map((a) => (
+        <div
+          key={a._id}
+          className={`border-b px-6 py-2 text-sm ${
+            a.level === 'warning'
+              ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400'
+              : 'border-primary/20 bg-primary/5 text-foreground'
+          }`}
+        >
+          <span className="font-medium">{a.title}</span> — {a.body}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** Authenticated shell: sidebar navigation, top bar, and a client-side guard. */
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -145,6 +181,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </header>
         <SubscriptionBanner />
+        <AnnouncementsBanner />
         <main className="flex-1 p-6">{children}</main>
       </div>
     </div>

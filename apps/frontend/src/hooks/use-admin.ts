@@ -39,6 +39,62 @@ export function usePlatformTenants(status?: string, search?: string) {
   });
 }
 
+export interface Announcement {
+  _id: string;
+  title: string;
+  body: string;
+  level: 'info' | 'warning';
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface PlatformConfig {
+  maintenanceMode: boolean;
+  maintenanceMessage: string;
+}
+
+export function useAnnouncements() {
+  return useQuery({
+    queryKey: ['platform', 'announcements'],
+    queryFn: async () => {
+      const { data } = await adminApi.get<ApiSuccess<Announcement[]>>('/platform/announcements');
+      return data.data;
+    },
+  });
+}
+
+export function useAnnouncementActions() {
+  const qc = useQueryClient();
+  const invalidate = () => qc.invalidateQueries({ queryKey: ['platform', 'announcements'] });
+  return {
+    create: useMutation({
+      mutationFn: (input: { title: string; body: string; level: string }) =>
+        adminApi.post('/platform/announcements', input),
+      onSuccess: invalidate,
+    }),
+    remove: useMutation({
+      mutationFn: (id: string) => adminApi.delete(`/platform/announcements/${id}`),
+      onSuccess: invalidate,
+    }),
+  };
+}
+
+export function usePlatformConfig() {
+  const qc = useQueryClient();
+  const query = useQuery({
+    queryKey: ['platform', 'config'],
+    queryFn: async () => {
+      const { data } = await adminApi.get<ApiSuccess<PlatformConfig>>('/platform/settings');
+      return data.data;
+    },
+  });
+  const update = useMutation({
+    mutationFn: (input: Partial<PlatformConfig>) => adminApi.patch('/platform/settings', input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['platform', 'config'] }),
+  });
+  return { query, update };
+}
+
 /** Approve / reject / suspend / reactivate a business. */
 export function useTenantAction() {
   const qc = useQueryClient();
