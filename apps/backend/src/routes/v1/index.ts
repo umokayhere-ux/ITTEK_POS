@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import announcementRoutes from './announcement.routes.js';
 import auditLogRoutes from './auditLog.routes.js';
+import billingRoutes from './billing.routes.js';
 import authRoutes from './auth.routes.js';
 import cashRegisterRoutes from './cashRegister.routes.js';
 import { maintenanceGuard } from '../../middlewares/maintenance.js';
@@ -50,6 +51,7 @@ router.use('/announcements', announcementRoutes);
 router.use('/staff', staffRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/subscription', subscriptionRoutes);
+router.use('/billing', billingRoutes);
 router.use('/audit-logs', auditLogRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/uploads', uploadRoutes);

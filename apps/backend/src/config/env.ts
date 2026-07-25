@@ -41,6 +41,9 @@ const envSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().default('iTtEk POS <no-reply@ittek.pos>'),
+  // Paystack (optional) — enables subscription billing.
+  PAYSTACK_SECRET_KEY: z.string().optional(),
+  PAYSTACK_PUBLIC_KEY: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

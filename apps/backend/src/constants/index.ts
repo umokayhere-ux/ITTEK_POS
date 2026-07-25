@@ -25,6 +25,16 @@ export type SubscriptionStatus =
 /** Length of the free trial in days. */
 export const TRIAL_PERIOD_DAYS = 14;
 
+/** Monthly plan pricing in major currency units (charged in the tenant's currency). */
+export const PLAN_PRICING: Record<string, { label: string; amount: number }> = {
+  starter: { label: 'Starter', amount: 100 },
+  business: { label: 'Business', amount: 300 },
+  enterprise: { label: 'Enterprise', amount: 800 },
+};
+
+/** Days added to the subscription per successful payment. */
+export const BILLING_PERIOD_DAYS = 30;
+
 /** Supported business categories at registration. */
 export const BUSINESS_TYPES = [
   'supermarket',

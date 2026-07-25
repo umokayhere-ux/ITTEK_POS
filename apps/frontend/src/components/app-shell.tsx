@@ -19,6 +19,7 @@ import {
   Receipt,
   Wallet,
   BarChart3,
+  CreditCard,
   Settings,
   LogOut,
 } from 'lucide-react';
@@ -44,6 +45,7 @@ const NAV: { href: string; label: string; icon: typeof LayoutDashboard; roles?: 
   { href: '/expenses', label: 'Expenses', icon: Receipt, roles: ['branch_manager', 'accountant'] },
   { href: '/cash-register', label: 'Cash Register', icon: Wallet, roles: ['branch_manager', 'cashier'] },
   { href: '/reports', label: 'Reports', icon: BarChart3, roles: ['branch_manager', 'accountant', 'auditor'] },
+  { href: '/billing', label: 'Billing', icon: CreditCard, roles: ['branch_manager'] },
   { href: '/settings', label: 'Settings', icon: Settings, roles: ['branch_manager'] },
 ];
 
