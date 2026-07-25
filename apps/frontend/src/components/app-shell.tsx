@@ -3,9 +3,13 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api';
+import type { ApiSuccess } from '@/lib/types';
 import {
   LayoutDashboard,
   ShoppingCart,
+  ReceiptText,
   Package,
   Tags,
   Boxes,
@@ -27,6 +31,7 @@ import { cn } from '@/lib/utils';
 const NAV = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/pos', label: 'Point of Sale', icon: ShoppingCart },
+  { href: '/sales', label: 'Sales', icon: ReceiptText },
   { href: '/products', label: 'Products', icon: Package },
   { href: '/catalog', label: 'Catalog', icon: Tags },
   { href: '/inventory', label: 'Inventory', icon: Boxes },
@@ -38,6 +43,43 @@ const NAV = [
   { href: '/reports', label: 'Reports', icon: BarChart3 },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
+
+interface SubscriptionInfo {
+  status: 'trialing' | 'active' | 'expired';
+  daysLeft: number | null;
+  readOnly: boolean;
+  plan: string;
+}
+
+/** Shows a trial countdown or an expired/read-only notice. */
+function SubscriptionBanner() {
+  const sub = useQuery({
+    queryKey: ['subscription'],
+    queryFn: async () => {
+      const { data } = await api.get<ApiSuccess<SubscriptionInfo>>('/subscription');
+      return data.data;
+    },
+  });
+
+  const info = sub.data;
+  if (!info) return null;
+
+  if (info.readOnly) {
+    return (
+      <div className="border-b border-destructive/30 bg-destructive/10 px-6 py-2 text-sm text-destructive">
+        Your subscription has expired — the workspace is read-only. Please renew to continue selling.
+      </div>
+    );
+  }
+  if (info.status === 'trialing' && info.daysLeft !== null) {
+    return (
+      <div className="border-b border-amber-500/30 bg-amber-500/10 px-6 py-2 text-sm text-amber-700 dark:text-amber-400">
+        Free trial — {info.daysLeft} day{info.daysLeft === 1 ? '' : 's'} remaining.
+      </div>
+    );
+  }
+  return null;
+}
 
 /** Authenticated shell: sidebar navigation, top bar, and a client-side guard. */
 export function AppShell({ children }: { children: ReactNode }) {
@@ -96,6 +138,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Button>
           </div>
         </header>
+        <SubscriptionBanner />
         <main className="flex-1 p-6">{children}</main>
       </div>
     </div>

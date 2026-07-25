@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table';
+import { ImageUpload } from '@/components/image-upload';
 import { products } from '@/hooks/resources';
 import { getApiErrorMessage } from '@/lib/api';
 import type { Product } from '@/lib/types';
@@ -20,6 +21,7 @@ export default function ProductsPage() {
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
+  const [imageUrl, setImageUrl] = useState('');
 
   const list = products.useList({ search: search || undefined, limit: 50 });
   const create = products.useCreate();
@@ -30,12 +32,14 @@ export default function ProductsPage() {
 
   function openCreate() {
     setEditing(null);
+    setImageUrl('');
     form.reset({ name: '', sku: '', barcode: '', costPrice: 0, sellingPrice: 0, taxRate: 0, reorderLevel: 0 });
     setOpen(true);
   }
 
   function openEdit(p: Product) {
     setEditing(p);
+    setImageUrl(p.images?.[0] ?? '');
     form.reset({
       name: p.name,
       sku: p.sku,
@@ -49,7 +53,11 @@ export default function ProductsPage() {
   }
 
   async function onSubmit(values: ProductFormValues) {
-    const payload = { ...values, barcode: values.barcode || undefined };
+    const payload = {
+      ...values,
+      barcode: values.barcode || undefined,
+      images: imageUrl ? [imageUrl] : [],
+    };
     if (editing) {
       await update.mutateAsync({ id: editing._id, payload });
     } else {
@@ -99,7 +107,15 @@ export default function ProductsPage() {
           <TBody>
             {items.map((p) => (
               <TR key={p._id}>
-                <TD className="font-medium">{p.name}</TD>
+                <TD className="font-medium">
+                  <div className="flex items-center gap-2">
+                    {p.images?.[0] && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={p.images[0]} alt="" className="h-8 w-8 rounded object-cover" />
+                    )}
+                    {p.name}
+                  </div>
+                </TD>
                 <TD className="text-muted-foreground">{p.sku}</TD>
                 <TD className="text-right">{p.sellingPrice.toFixed(2)}</TD>
                 <TD className="text-right">{p.reorderLevel}</TD>
@@ -133,6 +149,10 @@ export default function ProductsPage() {
 
       <Dialog open={open} onClose={() => setOpen(false)} title={editing ? 'Edit product' : 'Add product'}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
+          <div>
+            <Label>Image</Label>
+            <ImageUpload value={imageUrl} onChange={setImageUrl} />
+          </div>
           <div>
             <Label htmlFor="name">Name</Label>
             <Input id="name" {...form.register('name')} />

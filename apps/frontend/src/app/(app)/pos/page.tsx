@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { Minus, Plus, Trash2, Search, Printer } from 'lucide-react';
+import { Minus, Plus, Trash2, Search, Printer, ScanLine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,8 @@ const PAYMENT_METHODS = [
 
 export default function PosPage() {
   const [search, setSearch] = useState('');
+  const [barcode, setBarcode] = useState('');
+  const [scanError, setScanError] = useState('');
   const [cart, setCart] = useState<CartLine[]>([]);
   const [branchId, setBranchId] = useState('');
   const [method, setMethod] = useState('cash');
@@ -70,6 +72,31 @@ export default function PosPage() {
     });
   }
 
+  /** Looks up a product by barcode/SKU and adds it to the cart. Works with USB
+   *  barcode scanners, which type the code and press Enter. */
+  async function onScan(code: string) {
+    setScanError('');
+    const term = code.trim();
+    if (!term) return;
+    try {
+      const { data } = await api.get<ApiSuccess<Product[]>>('/products', {
+        params: { search: term, limit: 5 },
+      });
+      const items = data.data;
+      const match =
+        items.find((p) => p.barcode === term || p.sku.toLowerCase() === term.toLowerCase()) ??
+        items[0];
+      if (match) {
+        addToCart(match);
+        setBarcode('');
+      } else {
+        setScanError(`No product found for "${term}"`);
+      }
+    } catch {
+      setScanError('Lookup failed');
+    }
+  }
+
   function setQty(id: string, delta: number) {
     setCart((prev) =>
       prev
@@ -104,15 +131,33 @@ export default function PosPage() {
       {/* Product picker */}
       <div className="lg:col-span-2 space-y-4">
         <h1 className="text-2xl font-bold tracking-tight">Point of Sale</h1>
-        <div className="relative max-w-md">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="pl-9"
-            placeholder="Search products to add…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="relative sm:w-64">
+            <ScanLine className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="pl-9"
+              placeholder="Scan barcode…"
+              value={barcode}
+              onChange={(e) => setBarcode(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  onScan(barcode);
+                }
+              }}
+            />
+          </div>
+          <div className="relative sm:w-64">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="pl-9"
+              placeholder="Search products…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
         </div>
+        {scanError && <p className="text-sm text-destructive">{scanError}</p>}
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {(productList.data?.items ?? []).map((p) => (
