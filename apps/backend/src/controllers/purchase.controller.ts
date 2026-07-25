@@ -44,4 +44,9 @@ export const purchaseController = {
     if (!purchase) throw AppError.notFound('Purchase not found');
     sendSuccess(res, purchase, 'Purchase detail');
   },
+
+  async returnPurchase(req: Request, res: Response): Promise<void> {
+    const purchase = await purchaseService.returnPurchase(ctxOf(req), req.params.id as string);
+    sendSuccess(res, purchase, 'Purchase returned');
+  },
 };

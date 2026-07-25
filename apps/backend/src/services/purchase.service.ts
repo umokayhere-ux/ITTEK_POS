@@ -98,4 +98,51 @@ export const purchaseService = {
 
     return purchase;
   },
+
+  /** Returns a purchase to the supplier: removes received stock (where still
+   *  available) and clears any remaining balance owed. */
+  async returnPurchase(ctx: AuditContext, purchaseId: string): Promise<PurchaseDocument> {
+    const purchase = await Purchase.findOne({
+      _id: purchaseId,
+      tenantId: ctx.tenantId,
+      isDeleted: false,
+    }).exec();
+    if (!purchase) throw AppError.notFound('Purchase not found');
+    if (purchase.status === PURCHASE_STATUS.RETURNED) {
+      throw AppError.badRequest('Purchase is already returned');
+    }
+
+    const products = await Product.find({
+      _id: { $in: purchase.items.map((i) => i.productId) },
+      tenantId: ctx.tenantId,
+    }).exec();
+    const trackable = new Set(products.filter((p) => p.trackInventory).map((p) => p._id.toString()));
+
+    for (const item of purchase.items) {
+      if (!trackable.has(item.productId.toString())) continue;
+      // Best-effort: skip items whose stock has already been sold down.
+      await inventoryService
+        .move(ctx, {
+          productId: item.productId.toString(),
+          branchId: purchase.branchId.toString(),
+          change: -item.quantity,
+          type: STOCK_MOVEMENT.STOCK_OUT,
+          reference: `${purchase.reference}:return`,
+        })
+        .catch(() => undefined);
+    }
+
+    if (purchase.balanceDue > 0) {
+      await Supplier.updateOne(
+        { _id: purchase.supplierId, tenantId: ctx.tenantId },
+        { $inc: { outstandingBalance: -purchase.balanceDue } },
+      ).exec();
+    }
+
+    purchase.status = PURCHASE_STATUS.RETURNED;
+    purchase.balanceDue = 0;
+    purchase.updatedBy = ctx.userId as unknown as PurchaseDocument['updatedBy'];
+    await purchase.save();
+    return purchase;
+  },
 };

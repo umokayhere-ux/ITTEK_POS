@@ -13,6 +13,10 @@ export function Receipt({ sale, business }: { sale: Sale; business?: BusinessSet
   return (
     <div className="receipt-print absolute -left-[9999px] top-0 w-[80mm] bg-white p-3 font-mono text-[12px] text-black">
       <div className="text-center">
+        {business?.logoUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={business.logoUrl} alt="" className="mx-auto mb-1 h-12 w-auto object-contain" />
+        )}
         <div className="text-sm font-bold uppercase">{business?.businessName ?? 'iTtEk POS'}</div>
         {business?.address && <div>{business.address}</div>}
         {business?.phone && <div>{business.phone}</div>}

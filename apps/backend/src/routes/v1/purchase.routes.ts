@@ -12,5 +12,6 @@ router.use(authenticate, enforceSubscriptionOnWrite);
 router.post('/', validate(createPurchaseSchema), asyncHandler(purchaseController.create));
 router.get('/', asyncHandler(purchaseController.list));
 router.get('/:id', asyncHandler(purchaseController.getById));
+router.post('/:id/return', asyncHandler(purchaseController.returnPurchase));
 
 export default router;

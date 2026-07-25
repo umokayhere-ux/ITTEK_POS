@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Undo2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
@@ -67,6 +67,14 @@ export default function PurchasesPage() {
     },
   });
 
+  const returnPurchase = useMutation({
+    mutationFn: (id: string) => api.post(`/purchases/${id}/return`, {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['purchases'] });
+      qc.invalidateQueries({ queryKey: ['inventory'] });
+    },
+  });
+
   function addLine() {
     const first = productOptions[0];
     if (!first) return;
@@ -110,6 +118,7 @@ export default function PurchasesPage() {
               <TH className="text-right">Balance</TH>
               <TH>Status</TH>
               <TH>Date</TH>
+              <TH className="text-right">Actions</TH>
             </TR>
           </THead>
           <TBody>
@@ -120,11 +129,29 @@ export default function PurchasesPage() {
                 <TD className="text-right">{p.total.toFixed(2)}</TD>
                 <TD className="text-right">{p.balanceDue.toFixed(2)}</TD>
                 <TD>
-                  <Badge tone={p.status === 'received' ? 'success' : 'warning'} className="capitalize">
+                  <Badge
+                    tone={p.status === 'received' ? 'success' : p.status === 'returned' ? 'danger' : 'warning'}
+                    className="capitalize"
+                  >
                     {p.status}
                   </Badge>
                 </TD>
                 <TD className="text-muted-foreground">{new Date(p.createdAt).toLocaleDateString()}</TD>
+                <TD className="text-right">
+                  {p.status !== 'returned' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Return"
+                      onClick={() => {
+                        if (confirm(`Return ${p.reference} to supplier? This removes received stock.`))
+                          returnPurchase.mutate(p._id);
+                      }}
+                    >
+                      <Undo2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </TD>
               </TR>
             ))}
           </TBody>

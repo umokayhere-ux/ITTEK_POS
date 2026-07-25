@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ImageUpload } from '@/components/image-upload';
 import { api, getApiErrorMessage } from '@/lib/api';
 import type { ApiSuccess, BusinessSettings } from '@/lib/types';
 
@@ -15,7 +16,6 @@ const FIELDS: { key: keyof BusinessSettings; label: string; full?: boolean }[] =
   { key: 'currency', label: 'Currency (ISO code)' },
   { key: 'timezone', label: 'Timezone' },
   { key: 'taxNumber', label: 'Tax number' },
-  { key: 'logoUrl', label: 'Logo URL', full: true },
   { key: 'receiptHeader', label: 'Receipt header', full: true },
   { key: 'receiptFooter', label: 'Receipt footer', full: true },
 ];
@@ -37,7 +37,7 @@ export function BusinessSection() {
 
   const save = useMutation({
     mutationFn: async () => {
-      const payload: Record<string, unknown> = {};
+      const payload: Record<string, unknown> = { logoUrl: form.logoUrl ?? '' };
       for (const { key } of FIELDS) payload[key] = form[key] ?? '';
       const { data } = await api.patch<ApiSuccess<BusinessSettings>>('/settings/business', payload);
       return data.data;
@@ -55,6 +55,10 @@ export function BusinessSection() {
         save.mutate();
       }}
     >
+      <div>
+        <Label>Business logo</Label>
+        <ImageUpload value={form.logoUrl} onChange={(url) => setForm((v) => ({ ...v, logoUrl: url }))} />
+      </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {FIELDS.map((f) => (
           <div key={f.key} className={f.full ? 'sm:col-span-2' : ''}>
