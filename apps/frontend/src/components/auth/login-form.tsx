@@ -5,12 +5,11 @@ import { AxiosError } from 'axios';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { AlertCircle, ArrowRight, Mail, ShieldCheck } from 'lucide-react';
+import { AlertCircle, ArrowRight, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FieldError } from '@/components/ui/field-error';
-import { Input } from '@/components/ui/input';
+import { FloatingInput } from '@/components/ui/floating-field';
 import { Label } from '@/components/ui/label';
-import { PasswordInput } from '@/components/ui/password-input';
 import { useLogin } from '@/hooks/use-auth';
 import { getApiErrorMessage } from '@/lib/api';
 import { loginSchema, type LoginValues } from '@/lib/validators';
@@ -42,43 +41,32 @@ export function LoginForm() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
-        <div className="space-y-1.5">
-          <Label htmlFor="email">Email</Label>
-          <div className="relative">
-            <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              placeholder="you@business.com"
-              className="h-11 pl-10"
-              {...register('email')}
-            />
-          </div>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+        <div>
+          <FloatingInput id="email" label="Email" type="email" autoComplete="email" {...register('email')} />
           <FieldError message={errors.email?.message} />
         </div>
 
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="password">Password</Label>
-            <Link href="/forgot-password" className="text-xs font-medium text-primary hover:underline">
-              Forgot password?
-            </Link>
-          </div>
-          <PasswordInput
+        <div>
+          <FloatingInput
             id="password"
+            label="Password"
+            type="password"
             autoComplete="current-password"
-            placeholder="Enter your password"
             {...register('password')}
           />
           <FieldError message={errors.password?.message} />
         </div>
 
-        <label className="flex w-fit items-center gap-2 text-sm text-muted-foreground">
-          <input type="checkbox" {...register('rememberMe')} className="h-4 w-4 rounded border-input" />
-          Keep me signed in
-        </label>
+        <div className="flex items-center justify-between">
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            <input type="checkbox" {...register('rememberMe')} className="h-4 w-4 rounded border-input" />
+            Keep me signed in
+          </label>
+          <Link href="/forgot-password" className="text-sm font-medium text-primary hover:underline">
+            Forgot password?
+          </Link>
+        </div>
 
         {needs2fa && (
           <div className="space-y-1.5 rounded-lg border border-primary/30 bg-primary/5 p-3.5">
@@ -86,17 +74,14 @@ export function LoginForm() {
               <ShieldCheck className="h-4 w-4 text-primary" />
               Two-factor code
             </Label>
-            <Input
+            <FloatingInput
               id="twoFactorToken"
+              label="6-digit code"
               inputMode="numeric"
               autoComplete="one-time-code"
-              placeholder="6-digit code"
-              className="h-11 tracking-[0.3em]"
+              className="tracking-[0.3em]"
               {...register('twoFactorToken')}
             />
-            <p className="text-xs text-muted-foreground">
-              Enter the code from your authenticator app to finish signing in.
-            </p>
           </div>
         )}
 

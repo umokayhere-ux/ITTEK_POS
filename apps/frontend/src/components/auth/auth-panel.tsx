@@ -34,8 +34,13 @@ export function AuthPanel({ initialMode }: { initialMode: Mode }) {
           <BrandLogo className="h-12" />
         </div>
 
-        {/* Segmented switch */}
-        <div className="mb-6 grid grid-cols-2 gap-1 rounded-xl bg-muted p-1">
+        {/* Animated segmented switch */}
+        <div className="relative mb-6 grid grid-cols-2 rounded-xl bg-muted p-1">
+          <span
+            aria-hidden
+            className="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-lg bg-card shadow-sm transition-transform duration-300 ease-out"
+            style={{ transform: mode === 'register' ? 'translateX(100%)' : 'translateX(0)' }}
+          />
           {(['login', 'register'] as const).map((m) => (
             <button
               key={m}
@@ -43,10 +48,8 @@ export function AuthPanel({ initialMode }: { initialMode: Mode }) {
               onClick={() => switchTo(m)}
               aria-pressed={mode === m}
               className={cn(
-                'rounded-lg py-2 text-sm font-semibold transition-all',
-                mode === m
-                  ? 'bg-card text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground',
+                'relative z-10 rounded-lg py-2.5 text-sm font-semibold transition-colors',
+                mode === m ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
               )}
             >
               {m === 'login' ? 'Sign in' : 'Register'}

@@ -1,18 +1,16 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { AlertCircle, ArrowRight, CheckCircle2, Mail, Phone, Store, User } from 'lucide-react';
-import { forwardRef, type ComponentType, type InputHTMLAttributes } from 'react';
+import { useState } from 'react';
+import { useForm, type Path } from 'react-hook-form';
+import { AlertCircle, ArrowLeft, ArrowRight, Check, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FieldError } from '@/components/ui/field-error';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select } from '@/components/ui/select';
-import { PasswordInput } from '@/components/ui/password-input';
+import { FloatingInput, FloatingSelect } from '@/components/ui/floating-field';
 import { useRegister } from '@/hooks/use-auth';
 import { getApiErrorMessage } from '@/lib/api';
 import { COUNTRIES, detectedTimezone, timezoneOptions } from '@/lib/geo';
+import { cn } from '@/lib/utils';
 import { BUSINESS_TYPES, registerSchema, type RegisterValues } from '@/lib/validators';
 
 // Ensure the visitor's own timezone is always selectable, even on the fallback list.
@@ -22,30 +20,35 @@ const TIMEZONES = (() => {
   return detected && !list.includes(detected) ? [detected, ...list] : list;
 })();
 
-const IconField = forwardRef<
-  HTMLInputElement,
-  { icon: ComponentType<{ className?: string }> } & InputHTMLAttributes<HTMLInputElement>
->(({ icon: Icon, ...props }, ref) => (
-  <div className="relative">
-    <Icon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-    <Input ref={ref} className="h-11 pl-10" {...props} />
-  </div>
-));
-IconField.displayName = 'IconField';
+const STEPS = [
+  { title: 'Business', desc: 'Your shop details' },
+  { title: 'Account', desc: 'Owner sign-in' },
+] as const;
+
+// Fields validated before advancing from each step.
+const STEP_FIELDS: Path<RegisterValues>[][] = [
+  ['businessName', 'businessType', 'country', 'currency', 'timezone'],
+  ['ownerName', 'phone', 'email', 'password'],
+];
 
 export function RegisterForm({ onDone }: { onDone?: () => void }) {
   const registerBusiness = useRegister();
+  const [step, setStep] = useState(0);
   const {
     register,
     handleSubmit,
+    trigger,
     formState: { errors },
   } = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: {
-      currency: 'GHS',
-      timezone: detectedTimezone(),
-    },
+    mode: 'onTouched',
+    defaultValues: { currency: 'GHS', timezone: detectedTimezone() },
   });
+
+  async function next() {
+    const ok = await trigger(STEP_FIELDS[step]);
+    if (ok) setStep((s) => Math.min(s + 1, STEPS.length - 1));
+  }
 
   if (registerBusiness.isSuccess) {
     return (
@@ -70,30 +73,57 @@ export function RegisterForm({ onDone }: { onDone?: () => void }) {
       <div className="mb-6">
         <h1 className="text-xl font-bold tracking-tight">Create your business</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          An administrator reviews and approves new accounts.
+          Just two quick steps. An administrator reviews new accounts.
         </p>
       </div>
 
-      <form
-        onSubmit={handleSubmit((values) => registerBusiness.mutate(values))}
-        className="space-y-6"
-        noValidate
-      >
-        {/* Business */}
-        <div className="space-y-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Business details
-          </h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="businessName">Business name</Label>
-              <IconField id="businessName" icon={Store} placeholder="e.g. Accra Main Market" {...register('businessName')} />
-              <FieldError message={errors.businessName?.message} />
-            </div>
+      {/* Stepper */}
+      <ol className="mb-7 flex items-center">
+        {STEPS.map((s, i) => {
+          const done = i < step;
+          const active = i === step;
+          return (
+            <li key={s.title} className={cn('flex items-center', i < STEPS.length - 1 && 'flex-1')}>
+              <button
+                type="button"
+                onClick={() => i < step && setStep(i)}
+                className="flex items-center gap-2.5 text-left"
+              >
+                <span
+                  className={cn(
+                    'grid h-8 w-8 flex-none place-items-center rounded-full border text-sm font-semibold transition-colors',
+                    done && 'border-primary bg-primary text-primary-foreground',
+                    active && 'border-primary text-primary',
+                    !done && !active && 'border-border text-muted-foreground',
+                  )}
+                >
+                  {done ? <Check className="h-4 w-4" /> : i + 1}
+                </span>
+                <span className="hidden sm:block">
+                  <span className={cn('block text-sm font-semibold', active || done ? 'text-foreground' : 'text-muted-foreground')}>
+                    {s.title}
+                  </span>
+                  <span className="block text-xs text-muted-foreground">{s.desc}</span>
+                </span>
+              </button>
+              {i < STEPS.length - 1 && (
+                <span className={cn('mx-3 h-px flex-1 transition-colors', done ? 'bg-primary' : 'bg-border')} />
+              )}
+            </li>
+          );
+        })}
+      </ol>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="businessType">Business type</Label>
-              <Select id="businessType" defaultValue="" className="h-11" {...register('businessType')}>
+      <form onSubmit={handleSubmit((values) => registerBusiness.mutate(values))} noValidate>
+        {/* Step 1 — Business */}
+        <div className={cn('space-y-4', step !== 0 && 'hidden')}>
+          <div>
+            <FloatingInput id="businessName" label="Business name" {...register('businessName')} />
+            <FieldError message={errors.businessName?.message} />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <FloatingSelect id="businessType" label="Business type" defaultValue="" {...register('businessType')}>
                 <option value="" disabled>
                   Select…
                 </option>
@@ -102,13 +132,11 @@ export function RegisterForm({ onDone }: { onDone?: () => void }) {
                     {t.label}
                   </option>
                 ))}
-              </Select>
+              </FloatingSelect>
               <FieldError message={errors.businessType?.message} />
             </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="country">Country</Label>
-              <Select id="country" defaultValue="" className="h-11" {...register('country')}>
+            <div>
+              <FloatingSelect id="country" label="Country" defaultValue="" {...register('country')}>
                 <option value="" disabled>
                   Select a country…
                 </option>
@@ -117,81 +145,75 @@ export function RegisterForm({ onDone }: { onDone?: () => void }) {
                     {c}
                   </option>
                 ))}
-              </Select>
+              </FloatingSelect>
               <FieldError message={errors.country?.message} />
             </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="currency">Currency (ISO code)</Label>
-              <Input id="currency" maxLength={3} className="h-11 uppercase" placeholder="GHS" {...register('currency')} />
+            <div>
+              <FloatingInput id="currency" label="Currency (ISO)" maxLength={3} className="uppercase" {...register('currency')} />
               <FieldError message={errors.currency?.message} />
             </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="timezone">Timezone</Label>
-              <Select id="timezone" className="h-11" {...register('timezone')}>
+            <div>
+              <FloatingSelect id="timezone" label="Timezone" {...register('timezone')}>
                 <option value="" disabled>
-                  Select a timezone…
+                  Select…
                 </option>
                 {TIMEZONES.map((tz) => (
                   <option key={tz} value={tz}>
                     {tz.replace(/_/g, ' ')}
                   </option>
                 ))}
-              </Select>
+              </FloatingSelect>
               <FieldError message={errors.timezone?.message} />
             </div>
           </div>
         </div>
 
-        {/* Account */}
-        <div className="space-y-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Your account
-          </h2>
+        {/* Step 2 — Account */}
+        <div className={cn('space-y-4', step !== 1 && 'hidden')}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="ownerName">Your name</Label>
-              <IconField id="ownerName" icon={User} placeholder="Full name" {...register('ownerName')} />
+            <div>
+              <FloatingInput id="ownerName" label="Your name" {...register('ownerName')} />
               <FieldError message={errors.ownerName?.message} />
             </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="phone">Phone</Label>
-              <IconField id="phone" icon={Phone} type="tel" placeholder="+233…" {...register('phone')} />
+            <div>
+              <FloatingInput id="phone" label="Phone" type="tel" {...register('phone')} />
               <FieldError message={errors.phone?.message} />
             </div>
-
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="email">Email</Label>
-              <IconField id="email" icon={Mail} type="email" autoComplete="email" placeholder="you@business.com" {...register('email')} />
-              <FieldError message={errors.email?.message} />
-            </div>
-
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="password">Password</Label>
-              <PasswordInput
-                id="password"
-                autoComplete="new-password"
-                placeholder="At least 8 characters"
-                {...register('password')}
-              />
-              <FieldError message={errors.password?.message} />
-            </div>
+          </div>
+          <div>
+            <FloatingInput id="email" label="Email" type="email" autoComplete="email" {...register('email')} />
+            <FieldError message={errors.email?.message} />
+          </div>
+          <div>
+            <FloatingInput id="password" label="Password" type="password" autoComplete="new-password" {...register('password')} />
+            <FieldError message={errors.password?.message} />
           </div>
         </div>
 
         {registerBusiness.isError && (
-          <div className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+          <div className="mt-4 flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
             <AlertCircle className="mt-0.5 h-4 w-4 flex-none" />
             <span>{getApiErrorMessage(registerBusiness.error)}</span>
           </div>
         )}
 
-        <Button type="submit" size="lg" className="w-full" loading={registerBusiness.isPending}>
-          Create business account
-          {!registerBusiness.isPending && <ArrowRight className="h-4 w-4" />}
-        </Button>
+        <div className="mt-6 flex items-center gap-3">
+          {step > 0 && (
+            <Button type="button" variant="outline" size="lg" onClick={() => setStep((s) => s - 1)}>
+              <ArrowLeft className="h-4 w-4" /> Back
+            </Button>
+          )}
+          {step < STEPS.length - 1 ? (
+            <Button type="button" size="lg" className="flex-1" onClick={next}>
+              Next step <ArrowRight className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button type="submit" size="lg" className="flex-1" loading={registerBusiness.isPending}>
+              Create business account
+              {!registerBusiness.isPending && <ArrowRight className="h-4 w-4" />}
+            </Button>
+          )}
+        </div>
       </form>
     </div>
   );
