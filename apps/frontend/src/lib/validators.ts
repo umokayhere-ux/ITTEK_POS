@@ -62,6 +62,10 @@ export const productFormSchema = z.object({
   sellingPrice: money.default(0),
   taxRate: z.coerce.number().min(0).max(100).default(0),
   reorderLevel: z.coerce.number().min(0).default(0),
+  trackInventory: z.boolean().default(true),
+  // Optional starting stock recorded against a branch when creating a product.
+  openingStock: z.coerce.number().min(0).default(0),
+  openingBranchId: z.string().optional(),
 });
 export type ProductFormValues = z.infer<typeof productFormSchema>;
 

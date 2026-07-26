@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Receipt } from '@/components/receipt';
 import { branches, categories, products } from '@/hooks/resources';
 import { api, getApiErrorMessage } from '@/lib/api';
-import type { ApiSuccess, BusinessSettings, Product, Sale } from '@/lib/types';
+import type { ApiSuccess, BusinessSettings, Product, Sale, StockLevel } from '@/lib/types';
 
 interface CartLine {
   product: Product;
@@ -59,6 +59,25 @@ export default function PosPage() {
   const branchOptions = branchList.data?.items ?? [];
   const effectiveBranch = branchId || branchOptions[0]?._id || '';
 
+  // On-hand stock for the selected branch, so the till shows real availability.
+  const stockLevels = useQuery({
+    queryKey: ['inventory', 'levels', effectiveBranch],
+    enabled: !!effectiveBranch,
+    queryFn: async () => {
+      const { data } = await api.get<ApiSuccess<StockLevel[]>>('/inventory', {
+        params: { branchId: effectiveBranch, limit: 500 },
+      });
+      return data.data;
+    },
+  });
+  const stockByProduct = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const l of stockLevels.data ?? []) map.set(l.productId, l.quantity);
+    return map;
+  }, [stockLevels.data]);
+  const onHand = (p: Product) => stockByProduct.get(p._id) ?? 0;
+  const isTracked = (p: Product) => p.trackInventory !== false;
+
   const totals = useMemo(() => {
     let subtotal = 0;
     let tax = 0;
@@ -78,8 +97,15 @@ export default function PosPage() {
   const balanceDue = Math.max(0, netTotal - amountPaid);
 
   function addToCart(product: Product) {
+    setScanError('');
     setCart((prev) => {
       const existing = prev.find((l) => l.product._id === product._id);
+      const current = existing?.quantity ?? 0;
+      // Don't let the cart exceed what's actually on hand for tracked products.
+      if (isTracked(product) && current + 1 > onHand(product)) {
+        setScanError(`Only ${onHand(product)} of ${product.name} in stock at this branch.`);
+        return prev;
+      }
       if (existing) {
         return prev.map((l) => (l.product._id === product._id ? { ...l, quantity: l.quantity + 1 } : l));
       }
@@ -113,9 +139,17 @@ export default function PosPage() {
   }
 
   function setQty(id: string, delta: number) {
+    setScanError('');
     setCart((prev) =>
       prev
-        .map((l) => (l.product._id === id ? { ...l, quantity: l.quantity + delta } : l))
+        .map((l) => {
+          if (l.product._id !== id) return l;
+          if (delta > 0 && isTracked(l.product) && l.quantity + delta > onHand(l.product)) {
+            setScanError(`Only ${onHand(l.product)} of ${l.product.name} in stock at this branch.`);
+            return l;
+          }
+          return { ...l, quantity: l.quantity + delta };
+        })
         .filter((l) => l.quantity > 0),
     );
   }
@@ -147,6 +181,7 @@ export default function PosPage() {
       setCustomerName('');
       setCustomerPhone('');
       setPayments([{ method: 'cash', amount: '' }]);
+      stockLevels.refetch();
     },
   });
 
@@ -223,28 +258,43 @@ export default function PosPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {visibleProducts.map((p) => (
-            <button
-              key={p._id}
-              onClick={() => addToCart(p)}
-              className="overflow-hidden rounded-lg border border-border text-left transition-shadow hover:shadow-sm"
-            >
-              <div className="flex h-24 items-center justify-center bg-muted">
-                {p.images?.[0] ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.images[0]} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <span className="text-2xl font-bold text-muted-foreground/40">
-                    {p.name.charAt(0).toUpperCase()}
-                  </span>
-                )}
-              </div>
-              <div className="p-3">
-                <div className="line-clamp-2 text-sm font-medium">{p.name}</div>
-                <div className="mt-1 font-semibold text-primary">{p.sellingPrice.toFixed(2)}</div>
-              </div>
-            </button>
-          ))}
+          {visibleProducts.map((p) => {
+            const tracked = isTracked(p);
+            const stock = onHand(p);
+            const soldOut = tracked && stock <= 0;
+            return (
+              <button
+                key={p._id}
+                onClick={() => addToCart(p)}
+                disabled={soldOut}
+                className="overflow-hidden rounded-lg border border-border text-left transition-shadow hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <div className="flex h-24 items-center justify-center bg-muted">
+                  {p.images?.[0] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.images[0]} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-2xl font-bold text-muted-foreground/40">
+                      {p.name.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <div className="p-3">
+                  <div className="line-clamp-2 text-sm font-medium">{p.name}</div>
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <span className="font-semibold text-primary">{p.sellingPrice.toFixed(2)}</span>
+                    {tracked ? (
+                      <span className={`text-xs ${soldOut ? 'text-destructive' : 'text-muted-foreground'}`}>
+                        {soldOut ? 'Out of stock' : `${stock} in stock`}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Untracked</span>
+                    )}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
           {visibleProducts.length === 0 && (
             <p className="text-sm text-muted-foreground">No products found.</p>
           )}

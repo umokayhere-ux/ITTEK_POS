@@ -13,9 +13,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table';
+import { Select } from '@/components/ui/select';
 import { ImageUpload } from '@/components/image-upload';
-import { products } from '@/hooks/resources';
-import { getApiErrorMessage } from '@/lib/api';
+import { branches, products } from '@/hooks/resources';
+import { api, getApiErrorMessage } from '@/lib/api';
 import type { Product } from '@/lib/types';
 import { productFormSchema, type ProductFormValues } from '@/lib/validators';
 
@@ -26,6 +27,8 @@ export default function ProductsPage() {
   const [imageUrl, setImageUrl] = useState('');
 
   const list = products.useList({ search: search || undefined, limit: 50 });
+  const branchList = branches.useList({ limit: 100 });
+  const branchOptions = branchList.data?.items ?? [];
   const create = products.useCreate();
   const update = products.useUpdate();
   const remove = products.useRemove();
@@ -76,7 +79,18 @@ export default function ProductsPage() {
   function openCreate() {
     setEditing(null);
     setImageUrl('');
-    form.reset({ name: '', sku: '', barcode: '', costPrice: 0, sellingPrice: 0, taxRate: 0, reorderLevel: 0 });
+    form.reset({
+      name: '',
+      sku: '',
+      barcode: '',
+      costPrice: 0,
+      sellingPrice: 0,
+      taxRate: 0,
+      reorderLevel: 0,
+      trackInventory: true,
+      openingStock: 0,
+      openingBranchId: branchOptions[0]?._id ?? '',
+    });
     setOpen(true);
   }
 
@@ -91,20 +105,39 @@ export default function ProductsPage() {
       sellingPrice: p.sellingPrice,
       taxRate: p.taxRate,
       reorderLevel: p.reorderLevel,
+      trackInventory: p.trackInventory ?? true,
+      openingStock: 0,
+      openingBranchId: '',
     });
     setOpen(true);
   }
 
   async function onSubmit(values: ProductFormValues) {
+    const { openingStock, openingBranchId, ...rest } = values;
     const payload = {
-      ...values,
+      ...rest,
       barcode: values.barcode || undefined,
       images: imageUrl ? [imageUrl] : [],
     };
     if (editing) {
       await update.mutateAsync({ id: editing._id, payload });
     } else {
-      await create.mutateAsync(payload);
+      const created = await create.mutateAsync(payload);
+      // Seed opening stock into the chosen branch so the product is sellable
+      // straight away (recorded as a proper stock-in movement).
+      const branchId = openingBranchId || branchOptions[0]?._id;
+      if (openingStock > 0 && branchId) {
+        try {
+          await api.post('/inventory/stock-in', {
+            productId: created._id,
+            branchId,
+            quantity: openingStock,
+            reason: 'Opening stock',
+          });
+        } catch {
+          alert('Product created, but opening stock could not be recorded. Add it from Inventory.');
+        }
+      }
     }
     setOpen(false);
   }
@@ -251,6 +284,40 @@ export default function ProductsPage() {
               <Input id="reorderLevel" type="number" {...form.register('reorderLevel')} />
             </div>
           </div>
+
+          <label className="flex items-center gap-3 rounded-lg border border-border p-3 text-sm">
+            <input type="checkbox" className="h-4 w-4" {...form.register('trackInventory')} />
+            <span>
+              <span className="font-medium">Track inventory</span>
+              <span className="block text-xs text-muted-foreground">
+                When on, sales check stock and reduce it. Turn off for services or unlimited items.
+              </span>
+            </span>
+          </label>
+
+          {!editing && form.watch('trackInventory') && (
+            <div className="grid grid-cols-2 gap-3 rounded-lg border border-dashed border-border p-3">
+              <div>
+                <Label htmlFor="openingStock">Opening stock</Label>
+                <Input id="openingStock" type="number" min={0} {...form.register('openingStock')} />
+              </div>
+              <div>
+                <Label htmlFor="openingBranchId">Branch</Label>
+                <Select id="openingBranchId" {...form.register('openingBranchId')}>
+                  {branchOptions.length === 0 && <option value="">No branch — create one first</option>}
+                  {branchOptions.map((b) => (
+                    <option key={b._id} value={b._id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <p className="col-span-2 text-xs text-muted-foreground">
+                Sets the starting quantity so this product can be sold right away. You can adjust it
+                later from Inventory.
+              </p>
+            </div>
+          )}
 
           {mutationError && <p className="text-sm text-destructive">{getApiErrorMessage(mutationError)}</p>}
 
