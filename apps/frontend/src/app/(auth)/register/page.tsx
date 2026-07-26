@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
-import { AlertCircle, ArrowRight, CheckCircle2, Globe, Mail, Phone, Store, User } from 'lucide-react';
+import { AlertCircle, ArrowRight, CheckCircle2, Mail, Phone, Store, User } from 'lucide-react';
 import { forwardRef, type ComponentType, type InputHTMLAttributes } from 'react';
 import { BrandLogo } from '@/components/brand-logo';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,15 @@ import { Select } from '@/components/ui/select';
 import { PasswordInput } from '@/components/ui/password-input';
 import { useRegister } from '@/hooks/use-auth';
 import { getApiErrorMessage } from '@/lib/api';
+import { COUNTRIES, detectedTimezone, timezoneOptions } from '@/lib/geo';
 import { BUSINESS_TYPES, registerSchema, type RegisterValues } from '@/lib/validators';
+
+// Ensure the visitor's own timezone is always selectable, even on the fallback list.
+const TIMEZONES = (() => {
+  const list = timezoneOptions();
+  const detected = detectedTimezone();
+  return detected && !list.includes(detected) ? [detected, ...list] : list;
+})();
 
 const IconField = forwardRef<
   HTMLInputElement,
@@ -37,7 +45,7 @@ export default function RegisterPage() {
     resolver: zodResolver(registerSchema),
     defaultValues: {
       currency: 'GHS',
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      timezone: detectedTimezone(),
     },
   });
 
@@ -107,7 +115,16 @@ export default function RegisterPage() {
 
             <div className="space-y-1.5">
               <Label htmlFor="country">Country</Label>
-              <IconField id="country" icon={Globe} placeholder="Ghana" {...register('country')} />
+              <Select id="country" defaultValue="" className="h-11" {...register('country')}>
+                <option value="" disabled>
+                  Select a country…
+                </option>
+                {COUNTRIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </Select>
               <FieldError message={errors.country?.message} />
             </div>
 
@@ -117,9 +134,18 @@ export default function RegisterPage() {
               <FieldError message={errors.currency?.message} />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="timezone">Timezone</Label>
-              <Input id="timezone" className="h-11" {...register('timezone')} />
+              <Select id="timezone" className="h-11" {...register('timezone')}>
+                <option value="" disabled>
+                  Select a timezone…
+                </option>
+                {TIMEZONES.map((tz) => (
+                  <option key={tz} value={tz}>
+                    {tz.replace(/_/g, ' ')}
+                  </option>
+                ))}
+              </Select>
               <FieldError message={errors.timezone?.message} />
             </div>
           </div>

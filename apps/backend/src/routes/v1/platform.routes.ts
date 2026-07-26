@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import express, { Router } from 'express';
 import { platformController } from '../../controllers/platform.controller.js';
 import { authenticatePlatform } from '../../middlewares/authenticatePlatform.js';
 import { authLimiter } from '../../middlewares/rateLimiter.js';
@@ -10,8 +10,14 @@ const router = Router();
 
 router.post('/auth/login', authLimiter, validate(platformLoginSchema), asyncHandler(platformController.login));
 
+// Public branding (logo) for the login / registration screens.
+router.get('/branding', asyncHandler(platformController.branding));
+
 // Everything below requires a super admin token.
 router.use(authenticatePlatform);
+
+// Logo upload (base64 data URI → Cloudinary); larger body allowed on this route.
+router.post('/uploads/image', express.json({ limit: '8mb' }), asyncHandler(platformController.uploadImage));
 router.get('/me', asyncHandler(platformController.me));
 router.get('/stats', asyncHandler(platformController.stats));
 router.get('/tenants', asyncHandler(platformController.listTenants));

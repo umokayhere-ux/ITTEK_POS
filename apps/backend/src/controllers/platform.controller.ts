@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import { getCloudinary } from '../config/cloudinary.js';
 import { TENANT_STATUS } from '../constants/index.js';
 import { buildMeta, parseListQuery } from '../core/pagination.js';
 import { Announcement } from '../models/Announcement.js';
@@ -152,13 +153,15 @@ export const platformController = {
 
   async updateSettings(req: Request, res: Response): Promise<void> {
     adminId(req);
-    const { maintenanceMode, maintenanceMessage } = req.body as {
+    const { maintenanceMode, maintenanceMessage, logoUrl } = req.body as {
       maintenanceMode?: boolean;
       maintenanceMessage?: string;
+      logoUrl?: string;
     };
     const update: Record<string, unknown> = {};
     if (typeof maintenanceMode === 'boolean') update.maintenanceMode = maintenanceMode;
     if (typeof maintenanceMessage === 'string') update.maintenanceMessage = maintenanceMessage;
+    if (typeof logoUrl === 'string') update.logoUrl = logoUrl;
     const settings = await PlatformSettings.findOneAndUpdate({}, update, {
       new: true,
       upsert: true,
@@ -166,5 +169,30 @@ export const platformController = {
     }).exec();
     invalidatePlatformSettingsCache();
     sendSuccess(res, settings, 'Platform settings updated');
+  },
+
+  /** Public branding (logo) for the login / registration screens. */
+  async branding(_req: Request, res: Response): Promise<void> {
+    const settings = await getPlatformSettings();
+    sendSuccess(res, { logoUrl: settings.logoUrl ?? '' }, 'Branding');
+  },
+
+  /** Uploads a platform logo image to Cloudinary (super-admin only). */
+  async uploadImage(req: Request, res: Response): Promise<void> {
+    adminId(req);
+    const client = getCloudinary();
+    if (!client) {
+      throw new AppError(501, 'Image uploads are not configured. Set Cloudinary credentials.');
+    }
+    const { image } = req.body as { image?: string };
+    if (!image || typeof image !== 'string' || !image.startsWith('data:image/')) {
+      throw AppError.badRequest('A base64 image data URI is required');
+    }
+    const result = await client.uploader.upload(image, {
+      folder: 'ittek/platform',
+      resource_type: 'image',
+      transformation: [{ width: 1000, height: 1000, crop: 'limit' }],
+    });
+    sendSuccess(res, { url: result.secure_url, publicId: result.public_id }, 'Image uploaded', 201);
   },
 };

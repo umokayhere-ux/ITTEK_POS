@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { usePlatformStats, usePlatformTenants, useTenantAction } from '@/hooks/use-admin';
+import { BrandingCard } from '@/components/admin/branding-card';
 import { PlatformSection } from '@/components/admin/platform-section';
 import { TenantManageDialog } from '@/components/admin/tenant-manage-dialog';
 import { TicketsSection } from '@/components/admin/tickets-section';
@@ -189,7 +190,10 @@ export default function AdminDashboardPage() {
 
         <div className="pt-4">
           <h2 className="mb-4 text-lg font-semibold tracking-tight">Platform</h2>
-          <PlatformSection />
+          <div className="space-y-6">
+            <BrandingCard />
+            <PlatformSection />
+          </div>
         </div>
 
         <div className="pt-4">

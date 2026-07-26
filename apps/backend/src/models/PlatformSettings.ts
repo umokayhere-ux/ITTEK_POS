@@ -4,6 +4,7 @@ import { Schema, model, type Document, type Types } from 'mongoose';
 export interface PlatformSettingsDocument extends Document<Types.ObjectId> {
   maintenanceMode: boolean;
   maintenanceMessage: string;
+  logoUrl: string;
   updatedAt: Date;
 }
 
@@ -14,6 +15,8 @@ const platformSettingsSchema = new Schema<PlatformSettingsDocument>(
       type: String,
       default: 'iTtEk POS is undergoing maintenance. Please check back shortly.',
     },
+    // Company logo shown on the login / registration screens.
+    logoUrl: { type: String, default: '', trim: true },
   },
   { timestamps: { createdAt: false, updatedAt: true } },
 );

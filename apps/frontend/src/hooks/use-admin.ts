@@ -51,6 +51,7 @@ export interface Announcement {
 export interface PlatformConfig {
   maintenanceMode: boolean;
   maintenanceMessage: string;
+  logoUrl: string;
 }
 
 export function useAnnouncements() {
