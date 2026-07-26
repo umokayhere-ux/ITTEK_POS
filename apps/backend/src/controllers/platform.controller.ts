@@ -67,6 +67,25 @@ export const platformController = {
     sendSuccess(res, tenant, 'Business reactivated');
   },
 
+  async getTenantFeatures(req: Request, res: Response): Promise<void> {
+    adminId(req);
+    const result = await platformService.getTenantFeatures(req.params.id as string);
+    sendSuccess(res, result, 'Tenant features');
+  },
+
+  async setTenantFeatures(req: Request, res: Response): Promise<void> {
+    adminId(req);
+    const features = Array.isArray(req.body?.features) ? (req.body.features as string[]) : [];
+    const enabled = await platformService.setTenantFeatures(req.params.id as string, features);
+    sendSuccess(res, { enabled }, 'Tenant features updated');
+  },
+
+  async tenantOverview(req: Request, res: Response): Promise<void> {
+    adminId(req);
+    const overview = await platformService.tenantOverview(req.params.id as string);
+    sendSuccess(res, overview, 'Tenant overview');
+  },
+
   async listAnnouncements(req: Request, res: Response): Promise<void> {
     adminId(req);
     const items = await Announcement.find().sort({ createdAt: -1 }).exec();

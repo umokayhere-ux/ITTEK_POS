@@ -63,8 +63,15 @@ export const settingsController = {
   },
 
   async getPermissions(req: Request, res: Response): Promise<void> {
-    const matrix = await permissionService.matrix(tenantIdOf(req));
-    sendSuccess(res, { features: FEATURES, matrix }, 'Role permissions');
+    const tenantId = tenantIdOf(req);
+    const [matrix, enabled] = await Promise.all([
+      permissionService.matrix(tenantId),
+      permissionService.tenantFeatures(tenantId),
+    ]);
+    // The owner can only assign features the platform has enabled for the business.
+    const enabledSet = new Set(enabled);
+    const features = FEATURES.filter((f) => enabledSet.has(f.key));
+    sendSuccess(res, { features, matrix }, 'Role permissions');
   },
 
   async updatePermissions(req: Request, res: Response): Promise<void> {

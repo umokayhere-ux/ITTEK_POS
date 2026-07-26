@@ -130,6 +130,65 @@ export function useTicketActions() {
   };
 }
 
+export interface FeatureDef {
+  key: string;
+  label: string;
+}
+export interface TenantFeatures {
+  features: FeatureDef[];
+  enabled: string[];
+}
+
+export function useTenantFeatures(id: string | null) {
+  return useQuery({
+    queryKey: ['platform', 'tenant-features', id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data } = await adminApi.get<ApiSuccess<TenantFeatures>>(`/platform/tenants/${id}/features`);
+      return data.data;
+    },
+  });
+}
+
+export function useSetTenantFeatures() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, features }: { id: string; features: string[] }) =>
+      adminApi.put(`/platform/tenants/${id}/features`, { features }),
+    onSuccess: (_res, vars) => {
+      qc.invalidateQueries({ queryKey: ['platform', 'tenant-features', vars.id] });
+    },
+  });
+}
+
+export interface TenantOverview {
+  business: {
+    id: string;
+    businessName: string;
+    businessType: string;
+    email: string;
+    phone: string;
+    country: string;
+    timezone: string;
+    status: string;
+    createdAt: string;
+  };
+  counts: { staff: number; branches: number; products: number; customers: number; suppliers: number };
+  staff: { id: string; name: string; email: string; role: string; isActive: boolean }[];
+  branchList: { id: string; name: string; code: string; isActive: boolean }[];
+}
+
+export function useTenantOverview(id: string | null) {
+  return useQuery({
+    queryKey: ['platform', 'tenant-overview', id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data } = await adminApi.get<ApiSuccess<TenantOverview>>(`/platform/tenants/${id}/overview`);
+      return data.data;
+    },
+  });
+}
+
 /** Approve / reject / suspend / reactivate a business. */
 export function useTenantAction() {
   const qc = useQueryClient();

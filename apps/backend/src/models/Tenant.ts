@@ -1,5 +1,6 @@
 import { Schema, model, type Document, type Types } from 'mongoose';
 import {
+  ALL_FEATURE_KEYS,
   BUSINESS_TYPES,
   TENANT_STATUS,
   type BusinessType,
@@ -24,6 +25,7 @@ export interface TenantDocument extends Document<Types.ObjectId> {
   taxNumber?: string;
   receiptHeader?: string;
   receiptFooter?: string;
+  enabledFeatures: string[];
   status: TenantStatus;
   approvedAt?: Date;
   approvedBy?: Types.ObjectId;
@@ -49,6 +51,8 @@ const tenantSchema = new Schema<TenantDocument>(
     taxNumber: { type: String, trim: true },
     receiptHeader: { type: String, trim: true, maxlength: 300 },
     receiptFooter: { type: String, trim: true, maxlength: 300 },
+    // Features the platform (super admin) has enabled for this business.
+    enabledFeatures: { type: [String], default: () => [...ALL_FEATURE_KEYS] },
     status: {
       type: String,
       enum: Object.values(TENANT_STATUS),

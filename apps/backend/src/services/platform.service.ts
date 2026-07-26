@@ -1,6 +1,10 @@
-import { TENANT_STATUS } from '../constants/index.js';
+import { ALL_FEATURE_KEYS, FEATURES, TENANT_STATUS } from '../constants/index.js';
 import type { ListQuery } from '../core/pagination.js';
+import { Branch } from '../models/Branch.js';
+import { Customer } from '../models/Customer.js';
+import { Product } from '../models/Product.js';
 import { Sale, SALE_STATUS } from '../models/Sale.js';
+import { Supplier } from '../models/Supplier.js';
 import { SuperAdmin } from '../models/SuperAdmin.js';
 import { Tenant, type TenantDocument } from '../models/Tenant.js';
 import { User } from '../models/User.js';
@@ -99,5 +103,97 @@ export const platformService = {
     }
     await tenant.save();
     return tenant;
+  },
+
+  /** The feature catalog plus the set the platform has enabled for a tenant. */
+  async getTenantFeatures(
+    tenantId: string,
+  ): Promise<{ features: typeof FEATURES; enabled: string[] }> {
+    const tenant = await Tenant.findById(tenantId).select('enabledFeatures').exec();
+    if (!tenant) throw AppError.notFound('Business not found');
+    const enabled =
+      tenant.enabledFeatures && tenant.enabledFeatures.length > 0
+        ? tenant.enabledFeatures
+        : [...ALL_FEATURE_KEYS];
+    return { features: FEATURES, enabled };
+  },
+
+  /** Sets the features the platform enables for a tenant (validated). */
+  async setTenantFeatures(tenantId: string, features: string[]): Promise<string[]> {
+    const clean = [...new Set(features)].filter((f) => ALL_FEATURE_KEYS.includes(f));
+    // Dashboard and support are always available so a business is never locked out.
+    for (const required of ['dashboard', 'support']) {
+      if (!clean.includes(required)) clean.push(required);
+    }
+    const tenant = await Tenant.findByIdAndUpdate(
+      tenantId,
+      { $set: { enabledFeatures: clean } },
+      { new: true },
+    ).exec();
+    if (!tenant) throw AppError.notFound('Business not found');
+    return clean;
+  },
+
+  /**
+   * A non-financial operational overview of a tenant. The platform admin can see
+   * how a business is structured (staff, branches, catalogue size) but never its
+   * money: no sales, revenue, profit, expenses or debt figures are returned.
+   */
+  async tenantOverview(tenantId: string) {
+    const tenant = await Tenant.findById(tenantId).exec();
+    if (!tenant) throw AppError.notFound('Business not found');
+
+    const [staff, branches, products, customers, suppliers, branchDocs] = await Promise.all([
+      User.find({ tenantId, isDeleted: false })
+        .select('name email role isActive createdAt')
+        .sort({ createdAt: 1 })
+        .limit(100)
+        .lean()
+        .exec(),
+      Branch.countDocuments({ tenantId, isDeleted: false }).exec(),
+      Product.countDocuments({ tenantId, isDeleted: false }).exec(),
+      Customer.countDocuments({ tenantId, isDeleted: false }).exec(),
+      Supplier.countDocuments({ tenantId, isDeleted: false }).exec(),
+      Branch.find({ tenantId, isDeleted: false })
+        .select('name code isActive')
+        .sort({ createdAt: 1 })
+        .limit(100)
+        .lean()
+        .exec(),
+    ]);
+
+    return {
+      business: {
+        id: tenant._id.toString(),
+        businessName: tenant.businessName,
+        businessType: tenant.businessType,
+        email: tenant.email,
+        phone: tenant.phone,
+        country: tenant.country,
+        timezone: tenant.timezone,
+        status: tenant.status,
+        createdAt: tenant.createdAt,
+      },
+      counts: {
+        staff: staff.length,
+        branches,
+        products,
+        customers,
+        suppliers,
+      },
+      staff: staff.map((u) => ({
+        id: String(u._id),
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        isActive: u.isActive,
+      })),
+      branchList: branchDocs.map((b) => ({
+        id: String(b._id),
+        name: b.name,
+        code: b.code,
+        isActive: b.isActive,
+      })),
+    };
   },
 };

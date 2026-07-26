@@ -11,6 +11,7 @@ import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { usePlatformStats, usePlatformTenants, useTenantAction } from '@/hooks/use-admin';
 import { PlatformSection } from '@/components/admin/platform-section';
+import { TenantManageDialog } from '@/components/admin/tenant-manage-dialog';
 import { TicketsSection } from '@/components/admin/tickets-section';
 import { adminStorage } from '@/lib/admin';
 import type { AdminTenant } from '@/lib/types';
@@ -35,6 +36,7 @@ export default function AdminDashboardPage() {
   const [ready, setReady] = useState(false);
   const [tab, setTab] = useState('pending');
   const [search, setSearch] = useState('');
+  const [manage, setManage] = useState<AdminTenant | null>(null);
 
   useEffect(() => {
     if (!adminStorage.getToken()) router.replace('/admin/login');
@@ -174,6 +176,9 @@ export default function AdminDashboardPage() {
                           Reactivate
                         </Button>
                       )}
+                      <Button size="sm" variant="ghost" onClick={() => setManage(t)}>
+                        Manage
+                      </Button>
                     </div>
                   </TD>
                 </TR>
@@ -191,6 +196,8 @@ export default function AdminDashboardPage() {
           <TicketsSection />
         </div>
       </main>
+
+      <TenantManageDialog tenant={manage} onClose={() => setManage(null)} />
     </div>
   );
 }
