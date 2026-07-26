@@ -68,4 +68,36 @@ export const TENANT_STATUS = {
 
 export type TenantStatus = (typeof TENANT_STATUS)[keyof typeof TENANT_STATUS];
 
+/** Toggleable features (map to sidebar sections). Owners assign these to roles. */
+export const FEATURES = [
+  { key: 'dashboard', label: 'Dashboard' },
+  { key: 'pos', label: 'Point of Sale' },
+  { key: 'sales', label: 'Sales' },
+  { key: 'products', label: 'Products' },
+  { key: 'catalog', label: 'Catalog' },
+  { key: 'inventory', label: 'Inventory' },
+  { key: 'purchases', label: 'Purchases' },
+  { key: 'customers', label: 'Customers' },
+  { key: 'suppliers', label: 'Suppliers' },
+  { key: 'expenses', label: 'Expenses' },
+  { key: 'cash_register', label: 'Cash Register' },
+  { key: 'reports', label: 'Reports' },
+  { key: 'billing', label: 'Billing' },
+  { key: 'settings', label: 'Settings' },
+  { key: 'support', label: 'Support' },
+] as const;
+
+export const ALL_FEATURE_KEYS = FEATURES.map((f) => f.key) as string[];
+
+/** Default feature access per role (owner always gets everything). */
+export const DEFAULT_ROLE_FEATURES: Record<string, string[]> = {
+  branch_manager: [...ALL_FEATURE_KEYS],
+  store_manager: ['dashboard', 'pos', 'sales', 'products', 'catalog', 'inventory', 'customers', 'support'],
+  cashier: ['dashboard', 'pos', 'sales', 'products', 'customers', 'cash_register', 'support'],
+  store_keeper: ['dashboard', 'products', 'catalog', 'inventory', 'purchases', 'suppliers', 'support'],
+  accountant: ['dashboard', 'sales', 'purchases', 'suppliers', 'expenses', 'reports', 'support'],
+  sales_representative: ['dashboard', 'pos', 'sales', 'products', 'customers', 'support'],
+  auditor: ['dashboard', 'sales', 'reports', 'support'],
+};
+
 export const API_PREFIX = '/api/v1';

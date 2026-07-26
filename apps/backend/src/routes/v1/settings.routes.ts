@@ -21,4 +21,12 @@ router.patch(
   asyncHandler(settingsController.updateBusiness),
 );
 
+// Only the owner configures role permissions.
+router.get('/permissions', requireRole(SYSTEM_ROLES.OWNER), asyncHandler(settingsController.getPermissions));
+router.put(
+  '/permissions/:role',
+  requireRole(SYSTEM_ROLES.OWNER),
+  asyncHandler(settingsController.updatePermissions),
+);
+
 export default router;

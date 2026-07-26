@@ -31,24 +31,25 @@ import { useSession } from '@/hooks/use-auth';
 import { authStorage } from '@/lib/auth-storage';
 import { cn } from '@/lib/utils';
 
-// `roles` restricts a menu item; omit to show it to everyone. The owner always
-// sees everything.
-const NAV: { href: string; label: string; icon: typeof LayoutDashboard; roles?: string[] }[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/pos', label: 'Point of Sale', icon: ShoppingCart },
-  { href: '/sales', label: 'Sales', icon: ReceiptText },
-  { href: '/products', label: 'Products', icon: Package },
-  { href: '/catalog', label: 'Catalog', icon: Tags, roles: ['branch_manager', 'store_manager', 'store_keeper'] },
-  { href: '/inventory', label: 'Inventory', icon: Boxes, roles: ['branch_manager', 'store_manager', 'store_keeper'] },
-  { href: '/purchases', label: 'Purchases', icon: PackagePlus, roles: ['branch_manager', 'store_manager', 'store_keeper', 'accountant'] },
-  { href: '/customers', label: 'Customers', icon: Users },
-  { href: '/suppliers', label: 'Suppliers', icon: Truck, roles: ['branch_manager', 'store_keeper', 'accountant'] },
-  { href: '/expenses', label: 'Expenses', icon: Receipt, roles: ['branch_manager', 'accountant'] },
-  { href: '/cash-register', label: 'Cash Register', icon: Wallet, roles: ['branch_manager', 'cashier'] },
-  { href: '/reports', label: 'Reports', icon: BarChart3, roles: ['branch_manager', 'accountant', 'auditor'] },
-  { href: '/billing', label: 'Billing', icon: CreditCard, roles: ['branch_manager'] },
-  { href: '/settings', label: 'Settings', icon: Settings, roles: ['branch_manager'] },
-  { href: '/support', label: 'Support', icon: LifeBuoy },
+// Each item maps to a feature key. The owner configures which roles can access
+// which features (Settings → Roles); the sidebar reflects the current user's
+// effective feature list.
+const NAV: { href: string; label: string; icon: typeof LayoutDashboard; feature: string }[] = [
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, feature: 'dashboard' },
+  { href: '/pos', label: 'Point of Sale', icon: ShoppingCart, feature: 'pos' },
+  { href: '/sales', label: 'Sales', icon: ReceiptText, feature: 'sales' },
+  { href: '/products', label: 'Products', icon: Package, feature: 'products' },
+  { href: '/catalog', label: 'Catalog', icon: Tags, feature: 'catalog' },
+  { href: '/inventory', label: 'Inventory', icon: Boxes, feature: 'inventory' },
+  { href: '/purchases', label: 'Purchases', icon: PackagePlus, feature: 'purchases' },
+  { href: '/customers', label: 'Customers', icon: Users, feature: 'customers' },
+  { href: '/suppliers', label: 'Suppliers', icon: Truck, feature: 'suppliers' },
+  { href: '/expenses', label: 'Expenses', icon: Receipt, feature: 'expenses' },
+  { href: '/cash-register', label: 'Cash Register', icon: Wallet, feature: 'cash_register' },
+  { href: '/reports', label: 'Reports', icon: BarChart3, feature: 'reports' },
+  { href: '/billing', label: 'Billing', icon: CreditCard, feature: 'billing' },
+  { href: '/settings', label: 'Settings', icon: Settings, feature: 'settings' },
+  { href: '/support', label: 'Support', icon: LifeBuoy, feature: 'support' },
 ];
 
 interface SubscriptionInfo {
@@ -131,6 +132,16 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { user, logout } = useSession();
   const [ready, setReady] = useState(false);
 
+  const meQuery = useQuery({
+    queryKey: ['me', 'shell'],
+    enabled: ready,
+    queryFn: async () => {
+      const { data } = await api.get<ApiSuccess<{ features: string[] }>>('/auth/me');
+      return data.data.features ?? [];
+    },
+  });
+  const allowedFeatures = meQuery.data;
+
   useEffect(() => {
     if (!authStorage.getAccessToken()) {
       router.replace('/login');
@@ -138,6 +149,16 @@ export function AppShell({ children }: { children: ReactNode }) {
       setReady(true);
     }
   }, [router]);
+
+  // Keep users out of pages their role isn't permitted (menu is also hidden).
+  useEffect(() => {
+    if (!allowedFeatures) return;
+    const current = NAV.find((n) => pathname === n.href || pathname.startsWith(`${n.href}/`));
+    if (current && !allowedFeatures.includes(current.feature)) {
+      const first = NAV.find((n) => allowedFeatures.includes(n.feature));
+      router.replace(first?.href ?? '/dashboard');
+    }
+  }, [allowedFeatures, pathname, router]);
 
   if (!ready) {
     return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading…</div>;
@@ -155,9 +176,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           iTtEk<span className="-ml-1 text-primary">POS</span>
         </div>
         <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 py-2">
-          {NAV.filter(
-            (item) => !item.roles || !user || user.role === 'owner' || item.roles.includes(user.role),
-          ).map(({ href, label, icon: Icon }) => {
+          {NAV.filter((item) => !allowedFeatures || allowedFeatures.includes(item.feature)).map(
+            ({ href, label, icon: Icon }) => {
             const active = pathname === href || pathname.startsWith(`${href}/`);
             return (
               <Link

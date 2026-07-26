@@ -1,5 +1,7 @@
 import type { Request, Response } from 'express';
+import { FEATURES } from '../constants/index.js';
 import { Tenant, type TenantDocument } from '../models/Tenant.js';
+import { permissionService } from '../services/permission.service.js';
 import { AppError } from '../utils/AppError.js';
 import { sendSuccess } from '../utils/apiResponse.js';
 
@@ -58,5 +60,17 @@ export const settingsController = {
     }
     await tenant.save();
     sendSuccess(res, toBusiness(tenant), 'Business settings updated');
+  },
+
+  async getPermissions(req: Request, res: Response): Promise<void> {
+    const matrix = await permissionService.matrix(tenantIdOf(req));
+    sendSuccess(res, { features: FEATURES, matrix }, 'Role permissions');
+  },
+
+  async updatePermissions(req: Request, res: Response): Promise<void> {
+    const role = req.params.role as string;
+    const features = Array.isArray(req.body?.features) ? (req.body.features as string[]) : [];
+    const saved = await permissionService.setRole(tenantIdOf(req), role, features);
+    sendSuccess(res, { role, features: saved }, 'Permissions updated');
   },
 };

@@ -45,7 +45,9 @@ export const authController = {
     if (!req.auth) throw AppError.unauthorized();
     const user = await userRepository.findById(req.auth.tenantId, req.auth.userId);
     if (!user) throw AppError.notFound('User not found');
-    sendSuccess(res, toPublicUser(user), 'Current user');
+    const { permissionService } = await import('../services/permission.service.js');
+    const features = await permissionService.featuresForRole(req.auth.tenantId, String(user.role));
+    sendSuccess(res, { ...toPublicUser(user), features }, 'Current user');
   },
 
   async setup2fa(req: Request, res: Response): Promise<void> {
