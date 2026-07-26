@@ -43,3 +43,7 @@ data/
 
 # Unified deploy: frontend build copied into the backend
 apps/backend/public/
+
+# Data exports produced by scripts/backup.mjs — never commit real data
+backups/
+**/backups/
