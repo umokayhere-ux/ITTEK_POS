@@ -24,22 +24,20 @@ import { useSession } from '@/hooks/use-auth';
 import type { ApiSuccess } from '@/lib/types';
 
 interface Dashboard {
+  scope: 'mine' | 'business';
   todaySales: number;
   todayOrders: number;
   grossProfitToday: number;
-  lowStockCount: number;
-  inventoryValue: number;
-  customers: number;
-  suppliers: number;
   monthExpenses: number;
-  outstandingDebts: number;
+  lowStockCount: number | null;
+  inventoryValue: number | null;
+  customers: number | null;
+  suppliers: number | null;
+  outstandingDebts: number | null;
   salesSeries: { date: string; total: number }[];
   topProducts: { productId: string; name: string; quantitySold: number; revenue: number }[];
   recentActivities: { action: string; entity?: string; at: string }[];
-  trends: {
-    sales: { value: number; up: boolean };
-    orders: { value: number; up: boolean };
-  };
+  trends: { sales: { value: number; up: boolean }; orders: { value: number; up: boolean } };
 }
 
 const PERIODS = [
@@ -49,34 +47,41 @@ const PERIODS = [
   { key: 'yearly', label: 'Yearly' },
 ];
 
+const money = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 function trendBadge(t?: { value: number; up: boolean }) {
   if (!t) return undefined;
   return { value: `${t.up ? '+' : ''}${t.value}%`, up: t.up };
 }
 
-const money = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
 export default function DashboardPage() {
   const { user } = useSession();
+  const canViewBusiness = user?.role === 'owner' || user?.role === 'branch_manager';
+  const [scope, setScope] = useState<'mine' | 'business'>('mine');
   const [period, setPeriod] = useState('daily');
+  const effScope = canViewBusiness ? scope : 'mine';
+
   const q = useQuery({
-    queryKey: ['dashboard'],
+    queryKey: ['dashboard', effScope],
     queryFn: async () => {
-      const { data } = await api.get<ApiSuccess<Dashboard>>('/reports/dashboard');
+      const { data } = await api.get<ApiSuccess<Dashboard>>('/reports/dashboard', {
+        params: { scope: effScope },
+      });
       return data.data;
     },
   });
   const series = useQuery({
-    queryKey: ['sales-series', period],
+    queryKey: ['sales-series', period, effScope],
     queryFn: async () => {
       const { data } = await api.get<ApiSuccess<{ date: string; total: number }[]>>(
         '/reports/sales-series',
-        { params: { period } },
+        { params: { period, scope: effScope } },
       );
       return data.data;
     },
   });
   const d = q.data;
+  const mine = effScope === 'mine';
 
   return (
     <div className="space-y-6">
@@ -85,24 +90,40 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold tracking-tight">
             {greeting()}{user ? `, ${user.name.split(' ')[0]}` : ''}
           </h1>
-          <p className="text-sm text-muted-foreground">Here&apos;s what&apos;s happening today.</p>
+          <p className="text-sm text-muted-foreground">
+            {mine ? 'Your personal performance.' : "Your whole business at a glance."}
+          </p>
         </div>
-        <Link href="/pos">
-          <Button>
-            <ShoppingCart className="h-4 w-4" /> New sale
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          {canViewBusiness && (
+            <div className="flex gap-1 rounded-md border border-border p-0.5">
+              {(['mine', 'business'] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setScope(s)}
+                  className={`rounded px-2.5 py-1 text-xs font-medium capitalize transition-colors ${
+                    scope === s ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {s === 'mine' ? 'My performance' : 'Business'}
+                </button>
+              ))}
+            </div>
+          )}
+          <Link href="/pos">
+            <Button>
+              <ShoppingCart className="h-4 w-4" /> New sale
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      {/* Primary KPIs */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <StatCard label="Total Sales (Today)" value={d ? money(d.todaySales) : '—'} icon={ShoppingCart} tone="blue" trend={trendBadge(d?.trends.sales)} />
+      {/* Primary KPIs (personal by default) */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label={mine ? 'My Sales (Today)' : 'Total Sales (Today)'} value={d ? money(d.todaySales) : '—'} icon={ShoppingCart} tone="blue" trend={trendBadge(d?.trends.sales)} />
         <StatCard label="Gross Profit (Today)" value={d ? money(d.grossProfitToday) : '—'} icon={TrendingUp} tone="green" />
-        <StatCard label="Orders (Today)" value={d ? d.todayOrders : '—'} icon={ClipboardList} tone="purple" trend={trendBadge(d?.trends.orders)} />
-        <StatCard label="Inventory Value" value={d ? money(d.inventoryValue) : '—'} icon={Wallet} tone="sky" />
-        <Link href="/inventory">
-          <StatCard label="Low Stock Items" value={d ? d.lowStockCount : '—'} icon={AlertTriangle} tone="red" />
-        </Link>
+        <StatCard label={mine ? 'My Orders (Today)' : 'Orders (Today)'} value={d ? d.todayOrders : '—'} icon={ClipboardList} tone="purple" trend={trendBadge(d?.trends.orders)} />
+        <StatCard label={mine ? 'My Expenses (Month)' : 'Expenses (This Month)'} value={d ? money(d.monthExpenses) : '—'} icon={Receipt} tone="amber" />
       </div>
 
       {/* Chart + top products */}
@@ -110,7 +131,7 @@ export default function DashboardPage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <CardTitle>Sales overview</CardTitle>
+              <CardTitle>{mine ? 'My sales overview' : 'Sales overview'}</CardTitle>
               <div className="flex gap-1 rounded-md border border-border p-0.5">
                 {PERIODS.map((p) => (
                   <button
@@ -139,7 +160,7 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Top selling products</CardTitle>
+            <CardTitle>{mine ? 'My top products' : 'Top selling products'}</CardTitle>
           </CardHeader>
           <CardContent>
             {(d?.topProducts ?? []).length === 0 ? (
@@ -162,26 +183,31 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Secondary stats */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Link href="/customers">
-          <StatCard label="Total Customers" value={d ? d.customers : '—'} icon={Users} tone="blue" />
-        </Link>
-        <Link href="/suppliers">
-          <StatCard label="Total Suppliers" value={d ? d.suppliers : '—'} icon={Truck} tone="purple" />
-        </Link>
-        <Link href="/expenses">
-          <StatCard label="Expenses (This Month)" value={d ? money(d.monthExpenses) : '—'} icon={Receipt} tone="amber" />
-        </Link>
-        <Link href="/customers">
-          <StatCard label="Outstanding Debts" value={d ? money(d.outstandingDebts) : '—'} icon={HandCoins} tone="red" />
-        </Link>
-      </div>
+      {/* Business-wide stats — only in business scope */}
+      {!mine && d && (
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+          <Link href="/inventory">
+            <StatCard label="Inventory Value" value={money(d.inventoryValue ?? 0)} icon={Wallet} tone="sky" />
+          </Link>
+          <Link href="/inventory">
+            <StatCard label="Low Stock Items" value={d.lowStockCount ?? 0} icon={AlertTriangle} tone="red" />
+          </Link>
+          <Link href="/customers">
+            <StatCard label="Customers" value={d.customers ?? 0} icon={Users} tone="blue" />
+          </Link>
+          <Link href="/suppliers">
+            <StatCard label="Suppliers" value={d.suppliers ?? 0} icon={Truck} tone="purple" />
+          </Link>
+          <Link href="/customers">
+            <StatCard label="Outstanding Debts" value={money(d.outstandingDebts ?? 0)} icon={HandCoins} tone="amber" />
+          </Link>
+        </div>
+      )}
 
       {/* Recent activity */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent activity</CardTitle>
+          <CardTitle>{mine ? 'My recent activity' : 'Recent activity'}</CardTitle>
         </CardHeader>
         <CardContent>
           {(d?.recentActivities ?? []).length === 0 ? (

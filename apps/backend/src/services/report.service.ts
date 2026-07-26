@@ -87,78 +87,121 @@ export const reportService = {
     ]).exec();
   },
 
-  /** Aggregated numbers for the main dashboard. */
-  async dashboard(tenantId: string) {
+  /**
+   * Dashboard numbers. `scope: 'mine'` restricts sales/expenses/activity to the
+   * given user (their own performance); `'business'` shows the whole tenant and
+   * includes business-wide cards (inventory, customers, suppliers, debts).
+   */
+  async dashboard(tenantId: string, opts: { userId: string; scope: 'mine' | 'business' }) {
     const tid = new Types.ObjectId(tenantId);
+    const uid = new Types.ObjectId(opts.userId);
+    const mine = opts.scope === 'mine';
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const weekAgo = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
-    const saleBase = { tenantId: tid, isDeleted: false, status: { $ne: SALE_STATUS.REFUNDED } };
+
+    const saleMatch: Record<string, unknown> = {
+      tenantId: tid,
+      isDeleted: false,
+      status: { $ne: SALE_STATUS.REFUNDED },
+    };
+    if (mine) saleMatch.createdBy = uid;
+    const expenseMatch: Record<string, unknown> = {
+      tenantId: tid,
+      isDeleted: false,
+      date: { $gte: monthStart },
+    };
+    if (mine) expenseMatch.createdBy = uid;
+
     const sumSales = (from: Date, to?: Date) =>
       Sale.aggregate([
-        { $match: { ...saleBase, createdAt: to ? { $gte: from, $lt: to } : { $gte: from } } },
+        { $match: { ...saleMatch, createdAt: to ? { $gte: from, $lt: to } : { $gte: from } } },
         { $group: { _id: null, sales: { $sum: '$total' }, orders: { $sum: 1 } } },
       ]).exec();
 
-    const [
-      todayAgg,
-      cogsAgg,
-      lowStock,
-      invAgg,
-      customers,
-      suppliers,
-      monthExpAgg,
-      debtsAgg,
-      byDay,
-      topProducts,
-      activities,
-      yesterdayAgg,
-    ] = await Promise.all([
-      Sale.aggregate([
-        { $match: { ...saleBase, createdAt: { $gte: todayStart } } },
-        { $group: { _id: null, sales: { $sum: '$total' }, orders: { $sum: 1 } } },
-      ]).exec(),
-      Sale.aggregate([
-        { $match: { ...saleBase, createdAt: { $gte: todayStart } } },
-        { $unwind: '$items' },
-        { $lookup: { from: 'products', localField: 'items.productId', foreignField: '_id', as: 'p' } },
-        { $unwind: '$p' },
-        { $group: { _id: null, cogs: { $sum: { $multiply: ['$items.quantity', '$p.costPrice'] } } } },
-      ]).exec(),
-      inventoryService.lowStock(tenantId),
-      StockLevel.aggregate([
-        { $match: { tenantId: tid, isDeleted: false } },
-        { $lookup: { from: 'products', localField: 'productId', foreignField: '_id', as: 'p' } },
-        { $unwind: '$p' },
-        { $group: { _id: null, value: { $sum: { $multiply: ['$quantity', '$p.costPrice'] } } } },
-      ]).exec(),
-      Customer.countDocuments({ tenantId: tid, isDeleted: false }).exec(),
-      Supplier.countDocuments({ tenantId: tid, isDeleted: false }).exec(),
-      Expense.aggregate([
-        { $match: { tenantId: tid, isDeleted: false, date: { $gte: monthStart } } },
-        { $group: { _id: null, total: { $sum: '$amount' } } },
-      ]).exec(),
-      Customer.aggregate([
-        { $match: { tenantId: tid, isDeleted: false } },
-        { $group: { _id: null, total: { $sum: '$outstandingBalance' } } },
-      ]).exec(),
-      Sale.aggregate([
-        { $match: { ...saleBase, createdAt: { $gte: weekAgo } } },
-        {
-          $group: {
-            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
-            total: { $sum: '$total' },
+    const [todayAgg, cogsAgg, monthExpAgg, byDay, topProducts, activities, yesterdayAgg] =
+      await Promise.all([
+        sumSales(todayStart),
+        Sale.aggregate([
+          { $match: { ...saleMatch, createdAt: { $gte: todayStart } } },
+          { $unwind: '$items' },
+          { $lookup: { from: 'products', localField: 'items.productId', foreignField: '_id', as: 'p' } },
+          { $unwind: '$p' },
+          { $group: { _id: null, cogs: { $sum: { $multiply: ['$items.quantity', '$p.costPrice'] } } } },
+        ]).exec(),
+        Expense.aggregate([
+          { $match: expenseMatch },
+          { $group: { _id: null, total: { $sum: '$amount' } } },
+        ]).exec(),
+        Sale.aggregate([
+          { $match: { ...saleMatch, createdAt: { $gte: weekAgo } } },
+          {
+            $group: {
+              _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+              total: { $sum: '$total' },
+            },
           },
-        },
-        { $sort: { _id: 1 } },
-        { $project: { _id: 0, date: '$_id', total: 1 } },
-      ]).exec(),
-      this.topProducts(tenantId, {}, 5),
-      AuditLog.find({ tenantId: tid }).sort({ createdAt: -1 }).limit(6).lean().exec(),
-      sumSales(yesterdayStart, todayStart),
-    ]);
+          { $sort: { _id: 1 } },
+          { $project: { _id: 0, date: '$_id', total: 1 } },
+        ]).exec(),
+        Sale.aggregate([
+          { $match: saleMatch },
+          { $unwind: '$items' },
+          {
+            $group: {
+              _id: '$items.productId',
+              name: { $first: '$items.name' },
+              sku: { $first: '$items.sku' },
+              quantitySold: { $sum: '$items.quantity' },
+              revenue: { $sum: '$items.lineTotal' },
+            },
+          },
+          { $sort: { quantitySold: -1 } },
+          { $limit: 5 },
+          { $project: { _id: 0, productId: '$_id', name: 1, sku: 1, quantitySold: 1, revenue: 1 } },
+        ]).exec(),
+        AuditLog.find(mine ? { tenantId: tid, actorId: uid } : { tenantId: tid })
+          .sort({ createdAt: -1 })
+          .limit(6)
+          .lean()
+          .exec(),
+        sumSales(yesterdayStart, todayStart),
+      ]);
+
+    // Business-wide cards only in business scope.
+    let business = {
+      lowStockCount: null as number | null,
+      inventoryValue: null as number | null,
+      customers: null as number | null,
+      suppliers: null as number | null,
+      outstandingDebts: null as number | null,
+    };
+    if (!mine) {
+      const [lowStock, invAgg, customers, suppliers, debtsAgg] = await Promise.all([
+        inventoryService.lowStock(tenantId),
+        StockLevel.aggregate([
+          { $match: { tenantId: tid, isDeleted: false } },
+          { $lookup: { from: 'products', localField: 'productId', foreignField: '_id', as: 'p' } },
+          { $unwind: '$p' },
+          { $group: { _id: null, value: { $sum: { $multiply: ['$quantity', '$p.costPrice'] } } } },
+        ]).exec(),
+        Customer.countDocuments({ tenantId: tid, isDeleted: false }).exec(),
+        Supplier.countDocuments({ tenantId: tid, isDeleted: false }).exec(),
+        Customer.aggregate([
+          { $match: { tenantId: tid, isDeleted: false } },
+          { $group: { _id: null, total: { $sum: '$outstandingBalance' } } },
+        ]).exec(),
+      ]);
+      business = {
+        lowStockCount: lowStock.length,
+        inventoryValue: Math.round((invAgg[0]?.value ?? 0) * 100) / 100,
+        customers,
+        suppliers,
+        outstandingDebts: Math.round((debtsAgg[0]?.total ?? 0) * 100) / 100,
+      };
+    }
 
     const todaySales = todayAgg[0]?.sales ?? 0;
     const todayOrders = todayAgg[0]?.orders ?? 0;
@@ -166,7 +209,6 @@ export const reportService = {
     const ySales = yesterdayAgg[0]?.sales ?? 0;
     const yOrders = yesterdayAgg[0]?.orders ?? 0;
 
-    // Percent change vs. yesterday for the trend badges.
     const pct = (t: number, y: number): { value: number; up: boolean } => {
       if (y === 0) return { value: t > 0 ? 100 : 0, up: t >= 0 };
       const v = ((t - y) / y) * 100;
@@ -174,19 +216,13 @@ export const reportService = {
     };
 
     return {
+      scope: opts.scope,
       todaySales,
       todayOrders,
       grossProfitToday: Math.round((todaySales - cogs) * 100) / 100,
-      trends: {
-        sales: pct(todaySales, ySales),
-        orders: pct(todayOrders, yOrders),
-      },
-      lowStockCount: lowStock.length,
-      inventoryValue: Math.round((invAgg[0]?.value ?? 0) * 100) / 100,
-      customers,
-      suppliers,
+      trends: { sales: pct(todaySales, ySales), orders: pct(todayOrders, yOrders) },
       monthExpenses: monthExpAgg[0]?.total ?? 0,
-      outstandingDebts: Math.round((debtsAgg[0]?.total ?? 0) * 100) / 100,
+      ...business,
       salesSeries: byDay,
       topProducts,
       recentActivities: activities.map((a) => ({ action: a.action, entity: a.entity, at: a.createdAt })),
@@ -194,7 +230,7 @@ export const reportService = {
   },
 
   /** Sales totals bucketed by day/week/month/year for the overview toggle. */
-  salesSeries(tenantId: string, period: string) {
+  salesSeries(tenantId: string, period: string, opts?: { userId: string; scope: 'mine' | 'business' }) {
     const tid = new Types.ObjectId(tenantId);
     const now = new Date();
     let from: Date;
@@ -217,15 +253,16 @@ export const reportService = {
         format = '%Y-%m-%d';
     }
 
+    const match: Record<string, unknown> = {
+      tenantId: tid,
+      isDeleted: false,
+      status: { $ne: SALE_STATUS.REFUNDED },
+      createdAt: { $gte: from },
+    };
+    if (opts?.scope === 'mine') match.createdBy = new Types.ObjectId(opts.userId);
+
     return Sale.aggregate([
-      {
-        $match: {
-          tenantId: tid,
-          isDeleted: false,
-          status: { $ne: SALE_STATUS.REFUNDED },
-          createdAt: { $gte: from },
-        },
-      },
+      { $match: match },
       {
         $group: {
           _id: { $dateToString: { format, date: '$createdAt' } },
