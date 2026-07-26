@@ -140,6 +140,8 @@ export interface SaleLine {
 export interface Sale {
   _id: string;
   invoiceNumber: string;
+  customerName?: string;
+  customerPhone?: string;
   total: number;
   amountPaid: number;
   changeDue: number;

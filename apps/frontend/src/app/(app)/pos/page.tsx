@@ -31,6 +31,8 @@ export default function PosPage() {
   const [scanError, setScanError] = useState('');
   const [cart, setCart] = useState<CartLine[]>([]);
   const [branchId, setBranchId] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
   const [discount, setDiscount] = useState('');
   const [payments, setPayments] = useState<{ method: string; amount: string }[]>([
     { method: 'cash', amount: '' },
@@ -129,6 +131,8 @@ export default function PosPage() {
           : [{ method: payments[0]?.method ?? 'cash', amount: netTotal }];
       const payload = {
         branchId: effectiveBranch,
+        customerName: customerName.trim() || undefined,
+        customerPhone: customerPhone.trim() || undefined,
         items: cart.map((l) => ({ productId: l.product._id, quantity: l.quantity })),
         payments: effectivePayments,
         discount: discountValue,
@@ -140,6 +144,8 @@ export default function PosPage() {
       setReceipt(sale);
       setCart([]);
       setDiscount('');
+      setCustomerName('');
+      setCustomerPhone('');
       setPayments([{ method: 'cash', amount: '' }]);
     },
   });
@@ -261,6 +267,28 @@ export default function PosPage() {
                 </option>
               ))}
             </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label htmlFor="cust-name">Customer name</Label>
+              <Input
+                id="cust-name"
+                placeholder="Optional"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="cust-phone">Phone</Label>
+              <Input
+                id="cust-phone"
+                type="tel"
+                placeholder="Optional"
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+              />
+            </div>
           </div>
 
           {cart.length === 0 ? (

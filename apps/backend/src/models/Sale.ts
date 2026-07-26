@@ -39,6 +39,8 @@ export interface SaleDocument extends Document<Types.ObjectId>, TenantScopedFiel
   invoiceNumber: string;
   branchId: Types.ObjectId;
   customerId?: Types.ObjectId;
+  customerName?: string;
+  customerPhone?: string;
   items: SaleItem[];
   subtotal: number;
   taxTotal: number;
@@ -82,6 +84,9 @@ const saleSchema = new Schema<SaleDocument>(
     invoiceNumber: { type: String, required: true },
     branchId: { type: Schema.Types.ObjectId, ref: 'Branch', required: true },
     customerId: { type: Schema.Types.ObjectId, ref: 'Customer' },
+    // Optional walk-in customer details captured at the till for the receipt.
+    customerName: { type: String, trim: true, maxlength: 120 },
+    customerPhone: { type: String, trim: true, maxlength: 40 },
     items: { type: [saleItemSchema], required: true },
     subtotal: { type: Number, required: true, min: 0 },
     taxTotal: { type: Number, required: true, min: 0 },

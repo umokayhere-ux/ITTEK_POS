@@ -23,6 +23,8 @@ const paymentInput = z.object({
 export const createSaleSchema = z.object({
   branchId: objectId,
   customerId: objectId.optional(),
+  customerName: z.string().trim().max(120).optional(),
+  customerPhone: z.string().trim().max(40).optional(),
   items: z.array(saleItemInput).min(1, 'A sale needs at least one item'),
   payments: z.array(paymentInput).default([]),
   discount: z.number().min(0).default(0),

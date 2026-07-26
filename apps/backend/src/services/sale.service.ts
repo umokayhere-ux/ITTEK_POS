@@ -79,6 +79,21 @@ export const saleService = {
       }
     }
 
+    // 4b. Resolve customer details for the receipt. Free-text entries win; when
+    // a saved customer is chosen without an override, fall back to their record.
+    let customerName = input.customerName?.trim() || undefined;
+    let customerPhone = input.customerPhone?.trim() || undefined;
+    if (input.customerId && (!customerName || !customerPhone)) {
+      const customer = await Customer.findOne({ _id: input.customerId, tenantId: ctx.tenantId })
+        .select('name phone')
+        .lean()
+        .exec();
+      if (customer) {
+        customerName = customerName ?? customer.name;
+        customerPhone = customerPhone ?? customer.phone ?? undefined;
+      }
+    }
+
     // 5. Invoice number + persisted sale items.
     const invoiceNumber = invoiceNo(await nextSequence(ctx.tenantId, 'invoice'));
     const items: SaleItem[] = input.items.map((item, idx) => {
@@ -103,6 +118,8 @@ export const saleService = {
       invoiceNumber,
       branchId: input.branchId,
       customerId: input.customerId,
+      customerName,
+      customerPhone,
       items,
       subtotal: totals.subtotal,
       taxTotal: totals.taxTotal,
