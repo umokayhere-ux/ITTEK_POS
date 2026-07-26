@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 
 export function Table({ className, ...props }: HTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="w-full overflow-x-auto rounded-lg border border-border">
+    <div className="shadow-card w-full overflow-x-auto rounded-xl border border-border bg-card">
       <table className={cn('w-full text-sm', className)} {...props} />
     </div>
   );

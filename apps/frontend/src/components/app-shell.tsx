@@ -143,13 +143,18 @@ export function AppShell({ children }: { children: ReactNode }) {
     return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading…</div>;
   }
 
+  const initial = user?.name?.charAt(0).toUpperCase() ?? '?';
+
   return (
     <div className="flex min-h-screen">
-      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-border p-4 md:flex">
-        <div className="mb-6 px-2 text-lg font-bold tracking-tight">
-          iTtEk<span className="text-primary">POS</span>
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border bg-card md:flex">
+        <div className="flex items-center gap-2 px-5 py-4 text-lg font-bold tracking-tight">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm text-primary-foreground">
+            iT
+          </span>
+          iTtEk<span className="-ml-1 text-primary">POS</span>
         </div>
-        <nav className="flex flex-1 flex-col gap-1 overflow-y-auto">
+        <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 py-2">
           {NAV.filter(
             (item) => !item.roles || !user || user.role === 'owner' || item.roles.includes(user.role),
           ).map(({ href, label, icon: Icon }) => {
@@ -159,23 +164,39 @@ export function AppShell({ children }: { children: ReactNode }) {
                 key={href}
                 href={href}
                 className={cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                  active ? 'bg-primary text-primary-foreground' : 'hover:bg-muted',
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  active
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                 )}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-[18px] w-[18px]" />
                 {label}
               </Link>
             );
           })}
         </nav>
+        <div className="border-t border-border p-3">
+          <div className="flex items-center gap-3 rounded-lg px-2 py-1.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+              {initial}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-medium">{user?.name ?? '—'}</div>
+              <div className="truncate text-xs capitalize text-muted-foreground">
+                {user?.role?.replace(/_/g, ' ') ?? ''}
+              </div>
+            </div>
+          </div>
+        </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between border-b border-border px-6 py-3">
-          <div className="text-sm text-muted-foreground md:hidden">iTtEk POS</div>
-          <div className="ml-auto flex items-center gap-3">
-            {user && <span className="hidden text-sm text-muted-foreground sm:inline">{user.name}</span>}
+        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-card/80 px-6 py-3 backdrop-blur">
+          <div className="text-sm font-semibold md:hidden">
+            iTtEk<span className="text-primary">POS</span>
+          </div>
+          <div className="ml-auto flex items-center gap-2">
             <NotificationBell />
             <ThemeToggle />
             <Button variant="outline" size="sm" onClick={logout}>
@@ -186,7 +207,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </header>
         <SubscriptionBanner />
         <AnnouncementsBanner />
-        <main className="flex-1 p-6">{children}</main>
+        <main className="mx-auto w-full max-w-7xl flex-1 p-6">{children}</main>
       </div>
     </div>
   );

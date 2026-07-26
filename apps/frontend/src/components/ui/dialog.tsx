@@ -24,13 +24,13 @@ export function Dialog({ open, onClose, title, children }: DialogProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       onMouseDown={onClose}
     >
       <div
-        className="w-full max-w-lg rounded-lg border border-border bg-card shadow-lg"
+        className="shadow-pop w-full max-w-lg rounded-xl border border-border bg-card"
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-border px-5 py-3">

@@ -28,7 +28,7 @@ export function StatCard({
   hint?: string;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="shadow-card rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-pop">
       <div className="flex items-start justify-between">
         <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', chips[tone])}>
           <Icon className="h-5 w-5" />
