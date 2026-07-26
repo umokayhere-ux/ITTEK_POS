@@ -4,16 +4,12 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { BusinessSection } from '@/components/settings/business-section';
-import { BranchesSection } from '@/components/settings/branches-section';
-import { StaffSection } from '@/components/settings/staff-section';
 import { ActivitySection } from '@/components/settings/activity-section';
 import { SecuritySection } from '@/components/settings/security-section';
 import { RolesSection } from '@/components/settings/roles-section';
 
 const TABS = [
   { key: 'business', label: 'Business' },
-  { key: 'branches', label: 'Branches' },
-  { key: 'staff', label: 'Staff' },
   { key: 'roles', label: 'Roles' },
   { key: 'security', label: 'Security' },
   { key: 'activity', label: 'Activity' },
@@ -45,8 +41,6 @@ export default function SettingsPage() {
       <Card>
         <CardContent className="pt-6">
           {tab === 'business' && <BusinessSection />}
-          {tab === 'branches' && <BranchesSection />}
-          {tab === 'staff' && <StaffSection />}
           {tab === 'roles' && <RolesSection />}
           {tab === 'security' && <SecuritySection />}
           {tab === 'activity' && <ActivitySection />}

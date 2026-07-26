@@ -45,6 +45,7 @@ export function PaymentDialog({
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [partyType === 'customer' ? 'customers' : 'suppliers'] });
+      qc.invalidateQueries({ queryKey: ['debts'] });
       setAmount('');
       setNote('');
       onClose();
