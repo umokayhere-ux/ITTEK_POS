@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogOut, ShieldCheck } from 'lucide-react';
+import { BrandLogo } from '@/components/brand-logo';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -73,8 +74,15 @@ export default function AdminDashboardPage() {
     <div className="min-h-screen">
       <header className="flex items-center justify-between border-b border-border px-6 py-3">
         <div className="flex items-center gap-2 font-semibold">
-          <ShieldCheck className="h-5 w-5 text-primary" />
-          Platform Admin
+          <BrandLogo
+            className="h-7"
+            fallback={
+              <span className="inline-flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+                Platform Admin
+              </span>
+            }
+          />
         </div>
         <div className="flex items-center gap-3">
           {admin && <span className="hidden text-sm text-muted-foreground sm:inline">{admin.email}</span>}

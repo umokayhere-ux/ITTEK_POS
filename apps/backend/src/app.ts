@@ -58,12 +58,29 @@ export function createApp(): Application {
   // Serve the web app (single-deployment mode). API 404s stay JSON below.
   if (publicDir) {
     logger.info(`Serving frontend from ${publicDir}`);
-    app.use(express.static(publicDir));
+    app.use(
+      express.static(publicDir, {
+        setHeaders(res, filePath) {
+          // Hashed build assets never change — cache them hard.
+          if (filePath.includes(`${path.sep}_next${path.sep}static${path.sep}`)) {
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+          } else if (filePath.endsWith('.html')) {
+            // Always revalidate HTML so a redeploy's new asset hashes are picked
+            // up immediately (prevents an old page pointing at a dead CSS bundle).
+            res.setHeader('Cache-Control', 'no-cache');
+          }
+        },
+      }),
+    );
     app.get(/^\/(?!api\/).*/, (req, res, next) => {
       if (req.method !== 'GET') return next();
       const pageFile = path.join(publicDir, req.path, 'index.html');
-      if (fs.existsSync(pageFile)) return res.sendFile(pageFile);
-      return res.status(404).sendFile(path.join(publicDir, '404.html'));
+      if (fs.existsSync(pageFile)) {
+        res.setHeader('Cache-Control', 'no-cache');
+        return res.sendFile(pageFile);
+      }
+      res.status(404).setHeader('Cache-Control', 'no-cache');
+      return res.sendFile(path.join(publicDir, '404.html'));
     });
   }
 
