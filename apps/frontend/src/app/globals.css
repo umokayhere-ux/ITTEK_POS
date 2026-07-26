@@ -84,6 +84,23 @@
   }
 }
 
+@keyframes authfade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[authfade_260ms_ease\] {
+    animation: none !important;
+  }
+}
+
 /* Print: show only the receipt, hide the rest of the app. */
 @media print {
   body * {
