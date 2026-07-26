@@ -295,11 +295,11 @@ export default function ProductsPage() {
             </span>
           </label>
 
-          {!editing && form.watch('trackInventory') && (
+          {!editing && (
             <div className="grid grid-cols-2 gap-3 rounded-lg border border-dashed border-border p-3">
               <div>
-                <Label htmlFor="openingStock">Opening stock</Label>
-                <Input id="openingStock" type="number" min={0} {...form.register('openingStock')} />
+                <Label htmlFor="openingStock">Quantity in stock</Label>
+                <Input id="openingStock" type="number" min={0} placeholder="0" {...form.register('openingStock')} />
               </div>
               <div>
                 <Label htmlFor="openingBranchId">Branch</Label>
@@ -313,8 +313,8 @@ export default function ProductsPage() {
                 </Select>
               </div>
               <p className="col-span-2 text-xs text-muted-foreground">
-                Sets the starting quantity so this product can be sold right away. You can adjust it
-                later from Inventory.
+                How many you have on hand now, so this product can be sold right away. You can adjust
+                it later from Inventory.
               </p>
             </div>
           )}
