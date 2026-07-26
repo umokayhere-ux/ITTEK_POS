@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { AlertCircle, ArrowRight, CheckCircle2, Globe, Mail, Phone, Store, User } from 'lucide-react';
 import { forwardRef, type ComponentType, type InputHTMLAttributes } from 'react';
+import { BrandLogo } from '@/components/brand-logo';
 import { Button } from '@/components/ui/button';
 import { FieldError } from '@/components/ui/field-error';
 import { Input } from '@/components/ui/input';
@@ -64,6 +65,7 @@ export default function RegisterPage() {
 
   return (
     <div className="w-full max-w-xl py-4">
+      <BrandLogo className="mb-6 h-12" />
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight">Create your business</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">

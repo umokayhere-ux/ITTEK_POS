@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { AlertCircle, ArrowRight, Mail, ShieldCheck } from 'lucide-react';
+import { BrandLogo } from '@/components/brand-logo';
 import { Button } from '@/components/ui/button';
 import { FieldError } from '@/components/ui/field-error';
 import { Input } from '@/components/ui/input';
@@ -35,6 +36,7 @@ export default function LoginPage() {
 
   return (
     <div className="w-full max-w-sm">
+      <BrandLogo className="mb-6 h-14" />
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
