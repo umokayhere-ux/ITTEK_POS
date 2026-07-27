@@ -4,6 +4,7 @@ import { useState, type ComponentType } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Building2,
+  FileSpreadsheet,
   Image as ImageIcon,
   LayoutDashboard,
   LifeBuoy,
@@ -19,16 +20,25 @@ import { BrandingCard } from '@/components/admin/branding-card';
 import { BusinessesSection } from '@/components/admin/businesses-section';
 import { MaintenanceSection } from '@/components/admin/maintenance-section';
 import { OverviewSection } from '@/components/admin/overview-section';
+import { ReportsSection } from '@/components/admin/reports-section';
 import { TicketsSection } from '@/components/admin/tickets-section';
 import { usePlatformStats, useTickets } from '@/hooks/use-admin';
 import { adminStorage } from '@/lib/admin';
 import { cn } from '@/lib/utils';
 
-type SectionKey = 'overview' | 'businesses' | 'announcements' | 'tickets' | 'branding' | 'maintenance';
+type SectionKey =
+  | 'overview'
+  | 'businesses'
+  | 'reports'
+  | 'announcements'
+  | 'tickets'
+  | 'branding'
+  | 'maintenance';
 
 const NAV: { key: SectionKey; label: string; icon: ComponentType<{ className?: string }> }[] = [
   { key: 'overview', label: 'Overview', icon: LayoutDashboard },
   { key: 'businesses', label: 'Businesses', icon: Building2 },
+  { key: 'reports', label: 'Reports & exports', icon: FileSpreadsheet },
   { key: 'announcements', label: 'Announcements', icon: Megaphone },
   { key: 'tickets', label: 'Support tickets', icon: LifeBuoy },
   { key: 'branding', label: 'Branding', icon: ImageIcon },
@@ -38,6 +48,7 @@ const NAV: { key: SectionKey; label: string; icon: ComponentType<{ className?: s
 const TITLES: Record<SectionKey, { title: string; subtitle: string }> = {
   overview: { title: 'Overview', subtitle: 'Platform activity at a glance.' },
   businesses: { title: 'Businesses', subtitle: 'Review, approve and manage every business.' },
+  reports: { title: 'Reports & exports', subtitle: 'Per-business totals — download as Excel or PDF.' },
   announcements: { title: 'Announcements', subtitle: 'Broadcast messages to all businesses.' },
   tickets: { title: 'Support tickets', subtitle: 'Respond to messages from businesses.' },
   branding: { title: 'Branding', subtitle: 'The logo shown on the login screens.' },
@@ -162,6 +173,7 @@ export function AdminShell() {
           <div className="mx-auto max-w-6xl">
             {section === 'overview' && <OverviewSection />}
             {section === 'businesses' && <BusinessesSection />}
+            {section === 'reports' && <ReportsSection />}
             {section === 'announcements' && <AnnouncementsSection />}
             {section === 'tickets' && <TicketsSection />}
             {section === 'branding' && <BrandingCard />}

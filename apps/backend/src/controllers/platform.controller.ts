@@ -68,6 +68,11 @@ export const platformController = {
     sendSuccess(res, tenant, 'Business reactivated');
   },
 
+  async tenantsSummary(req: Request, res: Response): Promise<void> {
+    adminId(req);
+    sendSuccess(res, await platformService.tenantsSummary(), 'Tenant summary');
+  },
+
   async getTenantFeatures(req: Request, res: Response): Promise<void> {
     adminId(req);
     const result = await platformService.getTenantFeatures(req.params.id as string);

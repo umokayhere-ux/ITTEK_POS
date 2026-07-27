@@ -2,7 +2,9 @@ import { ALL_FEATURE_KEYS, FEATURES, TENANT_STATUS } from '../constants/index.js
 import type { ListQuery } from '../core/pagination.js';
 import { Branch } from '../models/Branch.js';
 import { Customer } from '../models/Customer.js';
+import { Expense } from '../models/Expense.js';
 import { Product } from '../models/Product.js';
+import { Purchase } from '../models/Purchase.js';
 import { Sale, SALE_STATUS } from '../models/Sale.js';
 import { Supplier } from '../models/Supplier.js';
 import { SuperAdmin } from '../models/SuperAdmin.js';
@@ -103,6 +105,52 @@ export const platformService = {
     }
     await tenant.save();
     return tenant;
+  },
+
+  /**
+   * Per-tenant record counts across the platform (NON-financial): how many
+   * products, customers, sales, etc. each business has. No money figures.
+   */
+  async tenantsSummary() {
+    const tenants = await Tenant.find().sort({ createdAt: -1 }).lean().exec();
+
+    const models = {
+      products: Product,
+      customers: Customer,
+      suppliers: Supplier,
+      staff: User,
+      branches: Branch,
+      sales: Sale,
+      purchases: Purchase,
+      expenses: Expense,
+    } as const;
+
+    const maps: Record<string, Map<string, number>> = {};
+    await Promise.all(
+      Object.entries(models).map(async ([key, Model]) => {
+        const rows = await (Model as typeof Product).aggregate([
+          { $match: { isDeleted: { $ne: true } } },
+          { $group: { _id: '$tenantId', n: { $sum: 1 } } },
+        ]);
+        maps[key] = new Map(rows.map((r) => [String(r._id), r.n as number]));
+      }),
+    );
+
+    return tenants.map((t) => {
+      const id = String(t._id);
+      const counts = Object.fromEntries(
+        Object.keys(models).map((key) => [key, maps[key]?.get(id) ?? 0]),
+      ) as Record<keyof typeof models, number>;
+      return {
+        id,
+        businessName: t.businessName,
+        businessType: t.businessType,
+        email: t.email,
+        status: t.status,
+        createdAt: t.createdAt,
+        counts,
+      };
+    });
   },
 
   /** The feature catalog plus the set the platform has enabled for a tenant. */

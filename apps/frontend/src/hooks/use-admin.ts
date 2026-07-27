@@ -131,6 +131,35 @@ export function useTicketActions() {
   };
 }
 
+export interface TenantSummaryRow {
+  id: string;
+  businessName: string;
+  businessType: string;
+  email: string;
+  status: string;
+  createdAt: string;
+  counts: {
+    products: number;
+    customers: number;
+    suppliers: number;
+    staff: number;
+    branches: number;
+    sales: number;
+    purchases: number;
+    expenses: number;
+  };
+}
+
+export function useTenantsSummary() {
+  return useQuery({
+    queryKey: ['platform', 'tenants-summary'],
+    queryFn: async () => {
+      const { data } = await adminApi.get<ApiSuccess<TenantSummaryRow[]>>('/platform/tenants/summary');
+      return data.data;
+    },
+  });
+}
+
 export interface FeatureDef {
   key: string;
   label: string;

@@ -101,13 +101,15 @@
   }
 }
 
-/* Print: show only the receipt, hide the rest of the app. */
+/* Print: show only the receipt (or a report), hide the rest of the app. */
 @media print {
   body * {
     visibility: hidden;
   }
   .receipt-print,
-  .receipt-print * {
+  .receipt-print *,
+  .report-print,
+  .report-print * {
     visibility: visible;
   }
   .receipt-print {
@@ -115,6 +117,15 @@
     inset: 0;
     margin: 0;
     width: 80mm;
+    color: #000;
+    background: #fff;
+  }
+  .report-print {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    width: 100%;
+    padding: 24px;
     color: #000;
     background: #fff;
   }

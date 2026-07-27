@@ -21,6 +21,7 @@ router.post('/uploads/image', express.json({ limit: '8mb' }), asyncHandler(platf
 router.get('/me', asyncHandler(platformController.me));
 router.get('/stats', asyncHandler(platformController.stats));
 router.get('/tenants', asyncHandler(platformController.listTenants));
+router.get('/tenants/summary', asyncHandler(platformController.tenantsSummary));
 router.post('/tenants/:id/approve', asyncHandler(platformController.approve));
 router.post('/tenants/:id/reject', validate(rejectTenantSchema), asyncHandler(platformController.reject));
 router.post('/tenants/:id/suspend', asyncHandler(platformController.suspend));
