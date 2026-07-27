@@ -28,7 +28,7 @@ const TABS: { key: 'overview' | TenantEntity; label: string }[] = [
 
 // Column config per entity: [record key, header, align-right?]
 const COLUMNS: Record<TenantEntity, [string, string, boolean?][]> = {
-  products: [['name', 'Product'], ['sku', 'SKU'], ['sellingPrice', 'Price', true], ['stock', 'Stock', true]],
+  products: [['name', 'Product'], ['sku', 'SKU'], ['stock', 'Stock', true]],
   customers: [['name', 'Name'], ['phone', 'Phone'], ['email', 'Email']],
   suppliers: [['name', 'Name'], ['phone', 'Phone'], ['email', 'Email']],
   staff: [['name', 'Name'], ['email', 'Email'], ['role', 'Role']],
@@ -192,7 +192,7 @@ export function TenantDetail({ tenant, onBack }: { tenant: AdminTenant; onBack: 
 function formatCell(row: TenantRecord, key: string) {
   const value = row[key];
   if (value === undefined || value === null || value === '') return '—';
-  if (key === 'sellingPrice' || key === 'stock') return num(Number(value));
+  if (key === 'stock') return num(Number(value));
   if (key === 'role') return String(value).replace(/_/g, ' ');
   return String(value);
 }

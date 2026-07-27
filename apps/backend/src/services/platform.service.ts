@@ -166,8 +166,9 @@ export const platformService = {
 
     switch (entity) {
       case 'products': {
+        // Prices are financial data — the platform admin sees stock, not price.
         const [products, stock] = await Promise.all([
-          Product.find(scope).select('name sku sellingPrice isActive').sort({ name: 1 }).limit(2000).lean().exec(),
+          Product.find(scope).select('name sku isActive').sort({ name: 1 }).limit(2000).lean().exec(),
           StockLevel.aggregate([
             { $match: { tenantId: new Types.ObjectId(tenantId), isDeleted: { $ne: true } } },
             { $group: { _id: '$productId', qty: { $sum: '$quantity' } } },
@@ -178,7 +179,6 @@ export const platformService = {
           id: String(p._id),
           name: p.name,
           sku: p.sku,
-          sellingPrice: p.sellingPrice,
           stock: stockMap.get(String(p._id)) ?? 0,
           isActive: p.isActive,
         }));
