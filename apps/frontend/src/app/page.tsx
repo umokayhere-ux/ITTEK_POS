@@ -7,7 +7,6 @@ import {
   Printer,
   ScanLine,
   ShieldCheck,
-  Sparkles,
   Store,
   Users,
 } from 'lucide-react';
@@ -69,12 +68,8 @@ export default function LandingPage() {
           <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-6 py-16 lg:grid-cols-[1.05fr_1fr] lg:py-24">
             {/* Copy */}
             <div>
-              <span className="landing-rise inline-flex items-center gap-1.5 rounded-full border border-border bg-card/70 px-3 py-1 text-xs font-semibold text-muted-foreground shadow-sm">
-                <Sparkles className="h-3.5 w-3.5 text-primary" />
-                Manage. Monitor. Grow.
-              </span>
               <h1
-                className="landing-rise mt-5 text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl"
+                className="landing-rise text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl"
                 style={{ animationDelay: '0.06s' }}
               >
                 The <span className="text-gradient">point of sale</span> built for growing retail
