@@ -1,5 +1,7 @@
+import { Types } from 'mongoose';
 import { ALL_FEATURE_KEYS, FEATURES, TENANT_STATUS } from '../constants/index.js';
 import type { ListQuery } from '../core/pagination.js';
+import { StockLevel } from '../models/StockLevel.js';
 import { Branch } from '../models/Branch.js';
 import { Customer } from '../models/Customer.js';
 import { Expense } from '../models/Expense.js';
@@ -151,6 +153,78 @@ export const platformService = {
         counts,
       };
     });
+  },
+
+  /**
+   * Read-only list of a tenant's operational records for the drill-down view.
+   * Whitelisted to non-financial entities; transaction/money records (sales,
+   * purchases, expenses, debts, payments) are intentionally not listable here.
+   * Products expose the selling price and on-hand stock, but not cost/margin.
+   */
+  async tenantEntityList(tenantId: string, entity: string) {
+    const scope = { tenantId, isDeleted: false } as const;
+
+    switch (entity) {
+      case 'products': {
+        const [products, stock] = await Promise.all([
+          Product.find(scope).select('name sku sellingPrice isActive').sort({ name: 1 }).limit(2000).lean().exec(),
+          StockLevel.aggregate([
+            { $match: { tenantId: new Types.ObjectId(tenantId), isDeleted: { $ne: true } } },
+            { $group: { _id: '$productId', qty: { $sum: '$quantity' } } },
+          ]),
+        ]);
+        const stockMap = new Map(stock.map((s) => [String(s._id), s.qty as number]));
+        return products.map((p) => ({
+          id: String(p._id),
+          name: p.name,
+          sku: p.sku,
+          sellingPrice: p.sellingPrice,
+          stock: stockMap.get(String(p._id)) ?? 0,
+          isActive: p.isActive,
+        }));
+      }
+      case 'customers':
+      case 'suppliers': {
+        const rows =
+          entity === 'customers'
+            ? await Customer.find(scope).select('name email phone isActive').sort({ name: 1 }).limit(2000).lean().exec()
+            : await Supplier.find(scope).select('name email phone isActive').sort({ name: 1 }).limit(2000).lean().exec();
+        return rows.map((r) => ({
+          id: String(r._id),
+          name: r.name,
+          email: r.email ?? '',
+          phone: r.phone ?? '',
+          isActive: r.isActive,
+        }));
+      }
+      case 'staff': {
+        const rows = await User.find({ tenantId, isDeleted: { $ne: true } })
+          .select('name email role isActive')
+          .sort({ name: 1 })
+          .limit(1000)
+          .lean()
+          .exec();
+        return rows.map((r) => ({
+          id: String(r._id),
+          name: r.name,
+          email: r.email,
+          role: r.role,
+          isActive: r.isActive,
+        }));
+      }
+      case 'branches': {
+        const rows = await Branch.find(scope).select('name code phone isActive').sort({ name: 1 }).limit(1000).lean().exec();
+        return rows.map((r) => ({
+          id: String(r._id),
+          name: r.name,
+          code: r.code,
+          phone: r.phone ?? '',
+          isActive: r.isActive,
+        }));
+      }
+      default:
+        throw AppError.badRequest('Unknown or non-listable entity');
+    }
   },
 
   /** The feature catalog plus the set the platform has enabled for a tenant. */

@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table';
+import { TenantDetail } from '@/components/admin/tenant-detail';
 import { TenantManageDialog } from '@/components/admin/tenant-manage-dialog';
 import { usePlatformTenants, useTenantAction } from '@/hooks/use-admin';
 import type { AdminTenant } from '@/lib/types';
@@ -28,9 +29,14 @@ export function BusinessesSection() {
   const [tab, setTab] = useState('pending');
   const [search, setSearch] = useState('');
   const [manage, setManage] = useState<AdminTenant | null>(null);
+  const [detail, setDetail] = useState<AdminTenant | null>(null);
 
   const tenants = usePlatformTenants(tab || undefined, search);
   const action = useTenantAction();
+
+  if (detail) {
+    return <TenantDetail tenant={detail} onBack={() => setDetail(null)} />;
+  }
 
   function act(id: string, a: 'approve' | 'reject' | 'suspend' | 'reactivate') {
     if (a === 'reject') {
@@ -83,7 +89,14 @@ export function BusinessesSection() {
             <TBody>
               {(tenants.data ?? []).map((t) => (
                 <TR key={t._id}>
-                  <TD className="font-medium">{t.businessName}</TD>
+                  <TD className="font-medium">
+                    <button
+                      className="text-left hover:text-primary hover:underline"
+                      onClick={() => setDetail(t)}
+                    >
+                      {t.businessName}
+                    </button>
+                  </TD>
                   <TD className="capitalize text-muted-foreground">{t.businessType}</TD>
                   <TD className="text-muted-foreground">{t.email}</TD>
                   <TD>
@@ -113,6 +126,9 @@ export function BusinessesSection() {
                           Reactivate
                         </Button>
                       )}
+                      <Button size="sm" variant="ghost" onClick={() => setDetail(t)}>
+                        View
+                      </Button>
                       <Button size="sm" variant="ghost" onClick={() => setManage(t)}>
                         Manage
                       </Button>

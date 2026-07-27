@@ -219,6 +219,24 @@ export function useTenantOverview(id: string | null) {
   });
 }
 
+export type TenantEntity = 'products' | 'customers' | 'suppliers' | 'staff' | 'branches';
+
+/** A row from a tenant's operational list (shape depends on the entity). */
+export type TenantRecord = Record<string, string | number | boolean>;
+
+export function useTenantEntity(id: string | null, entity: TenantEntity | null) {
+  return useQuery({
+    queryKey: ['platform', 'tenant-entity', id, entity],
+    enabled: !!id && !!entity,
+    queryFn: async () => {
+      const { data } = await adminApi.get<ApiSuccess<TenantRecord[]>>(
+        `/platform/tenants/${id}/list/${entity}`,
+      );
+      return data.data;
+    },
+  });
+}
+
 /** Approve / reject / suspend / reactivate a business. */
 export function useTenantAction() {
   const qc = useQueryClient();

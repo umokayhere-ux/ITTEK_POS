@@ -92,6 +92,15 @@ export const platformController = {
     sendSuccess(res, overview, 'Tenant overview');
   },
 
+  async tenantEntityList(req: Request, res: Response): Promise<void> {
+    adminId(req);
+    const rows = await platformService.tenantEntityList(
+      req.params.id as string,
+      req.params.entity as string,
+    );
+    sendSuccess(res, rows, 'Tenant records');
+  },
+
   async listAnnouncements(req: Request, res: Response): Promise<void> {
     adminId(req);
     const items = await Announcement.find().sort({ createdAt: -1 }).exec();

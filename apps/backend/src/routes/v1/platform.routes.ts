@@ -29,6 +29,7 @@ router.post('/tenants/:id/reactivate', asyncHandler(platformController.reactivat
 router.get('/tenants/:id/features', asyncHandler(platformController.getTenantFeatures));
 router.put('/tenants/:id/features', asyncHandler(platformController.setTenantFeatures));
 router.get('/tenants/:id/overview', asyncHandler(platformController.tenantOverview));
+router.get('/tenants/:id/list/:entity', asyncHandler(platformController.tenantEntityList));
 
 router.get('/announcements', asyncHandler(platformController.listAnnouncements));
 router.post('/announcements', asyncHandler(platformController.createAnnouncement));
