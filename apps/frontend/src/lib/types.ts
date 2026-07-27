@@ -143,6 +143,7 @@ export interface Sale {
   invoiceNumber: string;
   customerName?: string;
   customerPhone?: string;
+  cashierName?: string;
   total: number;
   amountPaid: number;
   changeDue: number;

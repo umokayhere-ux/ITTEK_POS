@@ -41,6 +41,7 @@ export interface SaleDocument extends Document<Types.ObjectId>, TenantScopedFiel
   customerId?: Types.ObjectId;
   customerName?: string;
   customerPhone?: string;
+  cashierName?: string;
   items: SaleItem[];
   subtotal: number;
   taxTotal: number;
@@ -87,6 +88,8 @@ const saleSchema = new Schema<SaleDocument>(
     // Optional walk-in customer details captured at the till for the receipt.
     customerName: { type: String, trim: true, maxlength: 120 },
     customerPhone: { type: String, trim: true, maxlength: 40 },
+    // Name of the staff member who rang up the sale (for "Served by" on receipts).
+    cashierName: { type: String, trim: true, maxlength: 120 },
     items: { type: [saleItemSchema], required: true },
     subtotal: { type: Number, required: true, min: 0 },
     taxTotal: { type: Number, required: true, min: 0 },

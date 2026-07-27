@@ -5,6 +5,7 @@ import { Customer } from '../models/Customer.js';
 import { STOCK_MOVEMENT } from '../models/InventoryLog.js';
 import { Product, type ProductDocument } from '../models/Product.js';
 import { Sale, SALE_STATUS, type SaleDocument, type SaleItem } from '../models/Sale.js';
+import { User } from '../models/User.js';
 import { auditLogRepository } from '../repositories/auditLog.repository.js';
 import { AppError } from '../utils/AppError.js';
 import { inventoryService } from './inventory.service.js';
@@ -94,6 +95,13 @@ export const saleService = {
       }
     }
 
+    // 4c. Name of the staff member ringing up the sale, for the receipt.
+    const cashier = await User.findOne({ _id: ctx.userId, tenantId: ctx.tenantId })
+      .select('name')
+      .lean()
+      .exec();
+    const cashierName = cashier?.name;
+
     // 5. Invoice number + persisted sale items.
     const invoiceNumber = invoiceNo(await nextSequence(ctx.tenantId, 'invoice'));
     const items: SaleItem[] = input.items.map((item, idx) => {
@@ -120,6 +128,7 @@ export const saleService = {
       customerId: input.customerId,
       customerName,
       customerPhone,
+      cashierName,
       items,
       subtotal: totals.subtotal,
       taxTotal: totals.taxTotal,

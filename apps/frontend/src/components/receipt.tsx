@@ -29,6 +29,7 @@ export function Receipt({ sale, business }: { sale: Sale; business?: BusinessSet
 
       <div>Invoice: {sale.invoiceNumber}</div>
       <div>Date: {new Date(sale.createdAt).toLocaleString()}</div>
+      {sale.cashierName && <div>Served by: {sale.cashierName}</div>}
       {sale.customerName && <div>Customer: {sale.customerName}</div>}
       {sale.customerPhone && <div>Phone: {sale.customerPhone}</div>}
 
