@@ -40,11 +40,10 @@ export default function AdminLoginPage() {
 
       <main className="relative z-10 flex min-h-[calc(100vh-4.5rem)] items-center justify-center px-4 py-10">
         <div className="w-full max-w-md">
-          <div className="mb-6 flex justify-center">
-            <BrandLogo className="h-12" />
-          </div>
-
           <div className="rounded-2xl border border-white/20 bg-card/90 p-6 shadow-2xl backdrop-blur-xl sm:p-8 dark:border-white/10">
+            <div className="mb-6 flex justify-center">
+              <BrandLogo className="h-12" />
+            </div>
             <div className="mb-6">
               <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <ShieldCheck className="h-5 w-5" />
