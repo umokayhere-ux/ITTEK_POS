@@ -214,6 +214,20 @@ export function RegisterForm({ onDone }: { onDone?: () => void }) {
             </Button>
           )}
         </div>
+
+        {step === STEPS.length - 1 && (
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            By creating an account, you agree to our{' '}
+            <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">
+              Terms
+            </a>{' '}
+            and{' '}
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">
+              Privacy Policy
+            </a>
+            .
+          </p>
+        )}
       </form>
     </div>
   );
