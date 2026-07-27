@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Receipt } from '@/components/receipt';
 import { branches, categories, products } from '@/hooks/resources';
 import { api, getApiErrorMessage } from '@/lib/api';
+import { printReceipt } from '@/lib/print';
 import type { ApiSuccess, BusinessSettings, Product, Sale, StockLevel } from '@/lib/types';
 
 interface CartLine {
@@ -491,7 +492,7 @@ export default function PosPage() {
                 <span>Change due</span>
                 <span>{receipt.changeDue.toFixed(2)}</span>
               </div>
-              <Button variant="outline" size="sm" className="mt-3 w-full" onClick={() => window.print()}>
+              <Button variant="outline" size="sm" className="mt-3 w-full" onClick={() => printReceipt()}>
                 <Printer className="h-4 w-4" /> Print receipt
               </Button>
             </div>

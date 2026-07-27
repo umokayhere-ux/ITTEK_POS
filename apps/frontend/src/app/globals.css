@@ -114,11 +114,21 @@
   }
   .receipt-print {
     position: absolute;
-    inset: 0;
+    left: 0;
+    top: 0;
     margin: 0;
-    width: 80mm;
+    /* Fill the thermal roll width set by @page (printReceipt); box-sizing keeps
+       the padding inside the paper so nothing is clipped. */
+    width: 100%;
+    box-sizing: border-box;
+    padding: 3mm 2mm;
     color: #000;
     background: #fff;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .receipt-print * {
+    box-sizing: border-box;
   }
   .report-print {
     position: absolute;
