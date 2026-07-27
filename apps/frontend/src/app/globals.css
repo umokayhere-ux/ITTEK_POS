@@ -117,9 +117,9 @@
     left: 0;
     top: 0;
     margin: 0;
-    /* Fill the thermal roll width set by @page (printReceipt); box-sizing keeps
-       the padding inside the paper so nothing is clipped. */
-    width: 100%;
+    /* Fixed 80mm strip so it always prints narrow, even if the printer/browser
+       ignores the @page roll size. box-sizing keeps padding inside the paper. */
+    width: 80mm;
     box-sizing: border-box;
     padding: 3mm 2mm;
     color: #000;
